@@ -170,3 +170,44 @@ def _parse_list(value: str | list) -> list[str]:
         return parsed if isinstance(parsed, list) else []
     except (json.JSONDecodeError, TypeError):
         return []
+
+
+# ── Convenience class (used by experiments/benchmark.py) ─────────────────────
+
+class SWEBenchLoader:
+    """
+    Class wrapper around load_swebench_lite() for use in the benchmark harness.
+
+    Usage:
+        loader = SWEBenchLoader()
+        instances = loader.load(split="test", max_instances=10)
+    """
+
+    def __init__(
+        self,
+        dataset_name: str = "princeton-nlp/SWE-bench_Lite",
+        cache_dir: Path | None = Path(".cache/swebench"),
+    ):
+        self.dataset_name = dataset_name
+        self.cache_dir = cache_dir
+
+    def load(
+        self,
+        split: str = "test",
+        max_instances: int | None = None,
+        instance_ids: list[str] | None = None,
+    ) -> list[dict]:
+        """
+        Load instances and return as plain dicts (benchmark-friendly format).
+        Keys: instance_id, repo, base_commit, problem_statement,
+              FAIL_TO_PASS, PASS_TO_PASS, patch.
+        """
+        instances = load_swebench_lite(
+            dataset_name=self.dataset_name,
+            split=split,
+            max_instances=max_instances,
+            instance_ids=instance_ids,
+            cache_dir=self.cache_dir,
+        )
+        return [_instance_to_dict(i) for i in instances]
+
