@@ -18,6 +18,8 @@ class Settings(BaseSettings):
 
     # ── LLM ─────────────────────────────────────────────────────────────────
     openai_api_key: str = Field(default="", alias="OPENAI_API_KEY")
+    groq_api_key: str = Field(default="", alias="GROQ_API_KEY")
+    llm_provider: str = Field(default="openai", alias="LLM_PROVIDER")  # openai | groq | gemini | ollama
     llm_model: str = Field(default="gpt-4o", alias="LLM_MODEL")
     llm_max_tokens: int = Field(default=4096, alias="LLM_MAX_TOKENS")
     llm_temperature: float = Field(default=0.2, alias="LLM_TEMPERATURE")

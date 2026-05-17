@@ -165,9 +165,10 @@ async def run_agent_task_async(
         traj_path = Path(f"results/trajectories/{task_id}.jsonl")
         traj_logger = TrajectoryLogger(traj_path)
 
+        from configs.settings import settings
         from agent.reflection_agent import ReflectionAgent
         agent = ReflectionAgent(
-            model="gpt-4o",
+            model=settings.llm_model,   # reads LLM_MODEL from env (e.g. deepseek-r1-distill-llama-70b)
             max_attempts=max_attempts,
             sandbox=sandbox,
             trajectory_logger=traj_logger,

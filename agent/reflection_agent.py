@@ -455,28 +455,50 @@ def _call_llm(
     client=None,
     model: str = "gpt-4o",
 ) -> tuple[str, dict]:
-    """Call OpenAI chat completion. Returns (patch_text, usage_dict)."""
+    """
+    Call the configured LLM provider (Groq, OpenAI, etc.).
+    Auto-detects provider from settings when client is None.
+    Returns (patch_text, usage_dict).
+    """
+    from configs.settings import settings
+
+    provider = settings.llm_provider.lower()
+    effective_model = model
+
+    # ── Groq (free, recommended) ───────────────────────────────────────────
+    if client is None and provider == "groq":
+        try:
+            from groq import Groq
+            client = Groq(api_key=settings.groq_api_key)
+            effective_model = settings.llm_model  # use configured Groq model
+        except ImportError as e:
+            raise ImportError("Install groq: pip install groq") from e
+
+    # ── OpenAI (fallback) ─────────────────────────────────────────────────
     if client is None:
         try:
             from openai import OpenAI
-            client = OpenAI()
+            client = OpenAI(api_key=settings.openai_api_key or None)
         except ImportError as e:
-            raise ImportError("Install openai: pip install openai") from e
+            raise ImportError(
+                "No LLM client available. Set LLM_PROVIDER=groq and GROQ_API_KEY, "
+                "or install openai: pip install openai"
+            ) from e
 
     response = client.chat.completions.create(
-        model=model,
+        model=effective_model,
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": user_prompt},
+            {"role": "user",   "content": user_prompt},
         ],
-        max_tokens=4096,
-        temperature=0.2,
+        max_tokens=settings.llm_max_tokens,
+        temperature=settings.llm_temperature,
     )
     patch_text = response.choices[0].message.content or ""
     usage = {
-        "prompt_tokens": response.usage.prompt_tokens,
+        "prompt_tokens":     response.usage.prompt_tokens,
         "completion_tokens": response.usage.completion_tokens,
-        "total_tokens": response.usage.total_tokens,
+        "total_tokens":      response.usage.total_tokens,
     }
     return patch_text, usage
 
