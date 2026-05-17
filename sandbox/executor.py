@@ -154,7 +154,8 @@ class SandboxExecutor:
         github_url = f"https://github.com/{repo}.git"
         workspace_dir.mkdir(parents=True, exist_ok=True)
 
-        logger.info("Cloning %s @ %s", repo, base_commit[:8])
+        commit_label = base_commit[:8] if base_commit and base_commit != "HEAD" else "HEAD"
+        logger.info("Cloning %s @ %s", repo, commit_label)
         clone_result = self._run_local(
             ["git", "clone", "--depth=1", github_url, str(workspace_dir)],
             timeout=120,  # network operation — longer timeout
@@ -163,12 +164,16 @@ class SandboxExecutor:
             logger.error("Clone failed: %s", clone_result.stderr[:500])
             return clone_result
 
-        # Checkout exact commit
-        checkout_result = self._run_local(
-            ["git", "checkout", base_commit],
-            cwd=workspace_dir,
-        )
-        return checkout_result
+        # Only checkout a specific commit if one is explicitly provided
+        # (skip when empty string or HEAD — --depth=1 already checked out latest)
+        if base_commit and base_commit.strip() and base_commit.upper() != "HEAD":
+            checkout_result = self._run_local(
+                ["git", "checkout", base_commit],
+                cwd=workspace_dir,
+            )
+            return checkout_result
+
+        return clone_result
 
     def apply_patch(
         self,

@@ -107,7 +107,7 @@ async def run_agent_task_async(
 
         repo = request_data["repo"]
         problem_statement = request_data["problem_statement"]
-        base_commit = request_data.get("base_commit", "HEAD")
+        base_commit = request_data.get("base_commit") or "HEAD"
         fail_to_pass = request_data.get("fail_to_pass", [])
         pass_to_pass = request_data.get("pass_to_pass", [])
         max_attempts = request_data.get("max_attempts", 3)
