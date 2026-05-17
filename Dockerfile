@@ -7,9 +7,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git curl build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies first (layer caching)
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Use slim API-only requirements (no torch/GPU/fine-tuning packages)
+# This keeps the image ~2GB instead of ~8GB
+COPY requirements-api.txt .
+RUN pip install --no-cache-dir --timeout=120 -r requirements-api.txt
 
 # Copy project code
 COPY . .

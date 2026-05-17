@@ -1,0 +1,44 @@
+# requirements-api.txt
+# Lightweight dependencies for the API server only.
+# Fine-tuning packages (torch, peft, bitsandbytes, trl) are NOT included here
+# — they are only needed when running fine_tuning/train.py on a GPU machine.
+
+# ── API framework ─────────────────────────────────────────────────────────────
+fastapi>=0.111.0
+uvicorn[standard]>=0.29.0
+websockets>=12.0
+python-dotenv>=1.0.0
+pydantic>=2.7.0
+pydantic-settings>=2.2.0
+httpx>=0.27.0
+tenacity>=8.3.0
+
+# ── LLM providers (free) ──────────────────────────────────────────────────────
+groq>=0.9.0
+google-generativeai>=0.7.0
+
+# ── Retrieval & Localisation ──────────────────────────────────────────────────
+rank-bm25>=0.2.2
+sentence-transformers>=3.0.0   # includes torch (CPU), but much smaller than full torch
+networkx>=3.3
+numpy>=1.26.0
+scipy>=1.13.0
+scikit-learn>=1.4.0
+
+# ── AST & Code Understanding ──────────────────────────────────────────────────
+tree-sitter>=0.22.0
+tree-sitter-python>=0.22.0
+
+# ── Caching & Redis ───────────────────────────────────────────────────────────
+diskcache>=5.6.3
+redis>=5.0.4
+
+# ── Observability ─────────────────────────────────────────────────────────────
+structlog>=24.1.0
+prometheus-client>=0.20.0
+slowapi>=0.1.9
+
+# ── Utilities ─────────────────────────────────────────────────────────────────
+gitpython>=3.1.43
+unidiff>=0.7.5
+rich>=13.7.0
