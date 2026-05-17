@@ -232,7 +232,7 @@ async def run_agent_task_async(
             "elapsed_seconds": round(elapsed, 2),
         }
 
-        update_task_status(task_id, **result)
+        update_task_status(task_id, **{k: v for k, v in result.items() if k != "task_id"})
         await emit_fn("done", result)
         await emit_fn("log", {
             "step": 5, "total": 5,
