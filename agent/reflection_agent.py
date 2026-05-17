@@ -456,32 +456,65 @@ def _call_llm(
     model: str = "gpt-4o",
 ) -> tuple[str, dict]:
     """
-    Call the configured LLM provider (Groq, OpenAI, etc.).
-    Auto-detects provider from settings when client is None.
+    Call the configured LLM provider via httpx (Groq) or OpenAI SDK.
+    Uses httpx directly for Groq to avoid SDK connection issues in HF Spaces.
     Returns (patch_text, usage_dict).
     """
+    import os
     from configs.settings import settings
 
-    provider = settings.llm_provider.lower()
-    effective_model = model
+    provider = (os.environ.get("LLM_PROVIDER") or settings.llm_provider).lower()
+    effective_model = os.environ.get("LLM_MODEL") or settings.llm_model
 
-    # ── Groq (free, recommended) ───────────────────────────────────────────
+    # ── Groq via httpx directly (most reliable in containerised envs) ──────
     if client is None and provider == "groq":
-        try:
-            from groq import Groq
-            client = Groq(api_key=settings.groq_api_key)
-            effective_model = settings.llm_model  # use configured Groq model
-        except ImportError as e:
-            raise ImportError("Install groq: pip install groq") from e
+        import httpx
+        api_key = os.environ.get("GROQ_API_KEY") or settings.groq_api_key
+        if not api_key:
+            raise ValueError("GROQ_API_KEY is not set. Add it as an env var or HF Space secret.")
 
-    # ── OpenAI (fallback) ─────────────────────────────────────────────────
+        logger.info("Calling Groq API: model=%s", effective_model)
+        try:
+            with httpx.Client(timeout=120.0) as http:
+                resp = http.post(
+                    "https://api.groq.com/openai/v1/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {api_key}",
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "model": effective_model,
+                        "messages": [
+                            {"role": "system", "content": SYSTEM_PROMPT},
+                            {"role": "user",   "content": user_prompt},
+                        ],
+                        "max_tokens": settings.llm_max_tokens,
+                        "temperature": settings.llm_temperature,
+                    },
+                )
+                resp.raise_for_status()
+                data = resp.json()
+
+            patch_text = data["choices"][0]["message"]["content"] or ""
+            usage_raw  = data.get("usage", {})
+            return patch_text, {
+                "prompt_tokens":     usage_raw.get("prompt_tokens", 0),
+                "completion_tokens": usage_raw.get("completion_tokens", 0),
+                "total_tokens":      usage_raw.get("total_tokens", 0),
+            }
+        except httpx.HTTPStatusError as e:
+            raise RuntimeError(f"Groq API error {e.response.status_code}: {e.response.text[:300]}") from e
+        except httpx.ConnectError as e:
+            raise RuntimeError(f"Cannot reach Groq API — check network / GROQ_API_KEY: {e}") from e
+
+    # ── OpenAI SDK fallback ────────────────────────────────────────────────
     if client is None:
         try:
             from openai import OpenAI
-            client = OpenAI(api_key=settings.openai_api_key or None)
+            client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY") or settings.openai_api_key or None)
         except ImportError as e:
             raise ImportError(
-                "No LLM client available. Set LLM_PROVIDER=groq and GROQ_API_KEY, "
+                "No LLM client available. Set LLM_PROVIDER=groq + GROQ_API_KEY, "
                 "or install openai: pip install openai"
             ) from e
 
