@@ -1,4 +1,14 @@
+---
+title: Repomind API
+emoji: 🤖
+colorFrom: blue
+colorTo: purple
+sdk: docker
+pinned: false
+---
+
 # 🤖 Autonomous Code Review & Bug-Fix Agent
+
 
 > **ML Engineering Project** — LLM Agents · SWE-bench · DeepSeek-Coder · AST Parsing · Conformal Prediction · RL Fine-Tuning
 
