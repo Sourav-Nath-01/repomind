@@ -469,7 +469,7 @@ def _call_llm(
     # ── Groq via httpx directly (most reliable in containerised envs) ──────
     if client is None and provider == "groq":
         import httpx
-        api_key = os.environ.get("GROQ_API_KEY") or settings.groq_api_key
+        api_key = (os.environ.get("GROQ_API_KEY") or settings.groq_api_key).strip()
         if not api_key:
             raise ValueError("GROQ_API_KEY is not set. Add it as an env var or HF Space secret.")
 
