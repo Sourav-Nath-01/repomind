@@ -1,0 +1,60 @@
+# ── Core Agent Dependencies ──────────────────────────────────────────────────
+openai>=1.30.0
+anthropic>=0.25.0
+python-dotenv>=1.0.0
+httpx>=0.27.0
+tenacity>=8.3.0               # retry with exponential backoff
+pydantic>=2.7.0
+pydantic-settings>=2.2.0
+
+# ── SWE-bench ────────────────────────────────────────────────────────────────
+datasets>=2.19.0              # HuggingFace datasets for SWE-bench Lite
+gitpython>=3.1.43
+unidiff>=0.7.5                # unified diff parsing
+
+# ── AST & Code Understanding ─────────────────────────────────────────────────
+tree-sitter>=0.22.0
+tree-sitter-python>=0.22.0
+networkx>=3.3
+
+# ── Retrieval & Localisation ─────────────────────────────────────────────────
+rank-bm25>=0.2.2
+faiss-cpu>=1.8.0
+sentence-transformers>=3.0.0
+transformers>=4.41.0
+torch>=2.3.0
+
+# ── Caching ───────────────────────────────────────────────────────────────────
+diskcache>=5.6.3
+redis>=5.0.4
+hiredis>=2.3.2
+
+# ── Experiment Tracking ───────────────────────────────────────────────────────
+mlflow>=2.13.0
+
+# ── API & Backend ─────────────────────────────────────────────────────────────
+fastapi>=0.111.0
+uvicorn[standard]>=0.29.0
+celery[redis]>=5.4.0
+websockets>=12.0
+
+# ── Fine-tuning ───────────────────────────────────────────────────────────────
+peft>=0.11.0
+bitsandbytes>=0.43.0
+accelerate>=0.30.0
+trl>=0.9.0
+
+# ── Uncertainty / Conformal Prediction ────────────────────────────────────────
+scipy>=1.13.0
+scikit-learn>=1.4.0
+numpy>=1.26.0
+
+# ── Observability ─────────────────────────────────────────────────────────────
+structlog>=24.1.0
+prometheus-client>=0.20.0
+slowapi>=0.1.9
+
+# ── Visualisation / Reporting ─────────────────────────────────────────────────
+matplotlib>=3.9.0
+seaborn>=0.13.0
+rich>=13.7.0                  # beautiful CLI output
