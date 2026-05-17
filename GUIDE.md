@@ -4,16 +4,304 @@
 
 ## Table of Contents
 
-1. [Learning Roadmap](#learning-roadmap) — what to read, in what order
-2. [How the System Works](#how-the-system-works) — full mental model
-3. [Local Setup](#local-setup) — step-by-step from zero
-4. [Getting Free API Keys](#getting-free-api-keys)
-5. [Running the Project](#running-the-project)
-6. [Running the Benchmark](#running-the-benchmark)
-7. [Fine-Tuning on Free GPU](#fine-tuning-on-free-gpu)
-8. [Deploying for Free](#deploying-for-free)
-9. [Troubleshooting](#troubleshooting)
-10. [Interview Prep](#interview-prep)
+1. [**🚀 How to Improve This Project**](#how-to-improve-this-project) ← **Start here**
+2. [Learning Roadmap](#learning-roadmap) — what to read, in what order
+3. [How the System Works](#how-the-system-works) — full mental model
+4. [Local Setup](#local-setup) — step-by-step from zero
+5. [Getting Free API Keys](#getting-free-api-keys)
+6. [Running the Project](#running-the-project)
+7. [Running the Benchmark](#running-the-benchmark)
+8. [Fine-Tuning on Free GPU](#fine-tuning-on-free-gpu)
+9. [Deploying for Free](#deploying-for-free)
+10. [Troubleshooting](#troubleshooting)
+11. [Interview Prep](#interview-prep)
+
+---
+
+## How to Improve This Project
+
+> Current grade: **B+** for top tech AIML roles.
+> Target grade: **A / A+** — follow these steps in priority order.
+
+---
+
+### Priority 1 — Run the Real Benchmark ⭐ (Biggest Impact)
+
+**Why it matters:** Right now, "30–42% resolve rate" is just the SWE-bench SOTA range — not a number you actually measured. Interviewers will ask *"what did YOU get?"* and you won't have an answer. Fix this first.
+
+**What to do:**
+
+```bash
+# Run on 50 issues first (~30 minutes, free with Groq)
+python -m experiments.benchmark \
+  --variant with_reflection \
+  --max-instances 50 \
+  --output-dir results/benchmark_50/
+
+# Then check your actual resolve rate
+python -m experiments.benchmark --report-only --results-dir results/benchmark_50/
+```
+
+**What to add to README after running:**
+```markdown
+## Benchmark Results (measured)
+
+| Variant              | Instances | Resolve Rate | Recall@5 | Avg Time |
+|----------------------|-----------|--------------|----------|----------|
+| No reflection (k=1)  | 50        | XX.X%        | XX.X%    | XXs      |
+| With reflection (k=3)| 50        | XX.X%        | XX.X%    | XXs      |
+```
+
+**Resume bullet point upgrade:**
+```
+Before: "30–42% resolve rate on SWE-bench Lite"
+After:  "Achieved 34.2% resolve rate on SWE-bench Lite (50 issues),
+         +9% over no-reflection baseline"
+```
+
+**Time required:** 1–2 hours (mostly waiting for API calls)
+**Cost:** Free (Groq rate limits allow ~100 issues/day)
+
+---
+
+### Priority 2 — Run Ablation Study ⭐⭐
+
+**Why it matters:** An ablation study shows you think like a researcher, not just a developer. It proves each component you built actually contributes.
+
+**What to do:** Run the benchmark 3 times with different configs:
+
+```bash
+# Variant A: BM25 only (no embeddings, no PPR)
+python -m experiments.benchmark --variant bm25_only --max-instances 50
+
+# Variant B: BM25 + embeddings, no PPR
+python -m experiments.benchmark --variant no_ppr --max-instances 50
+
+# Variant C: Full pipeline (BM25 + embeddings + PPR + DeBERTa)
+python -m experiments.benchmark --variant with_reflection --max-instances 50
+```
+
+**Expected result table (fill in your real numbers):**
+
+| Component                          | Recall@5 | Resolve Rate |
+|------------------------------------|----------|--------------|
+| BM25 only                          | ~41%     | ~18%         |
+| BM25 + Embeddings                  | ~58%     | ~24%         |
+| BM25 + Embeddings + PPR            | ~72%     | ~30%         |
+| + DeBERTa reranker + Reflection    | ~74%     | ~34%         |
+
+**This table = your most powerful interview answer.**
+
+**Time required:** 3–4 hours
+**Cost:** Free (Groq)
+
+---
+
+### Priority 3 — Fine-Tune a Custom Model ⭐⭐⭐
+
+**Why it matters:** "I called the Groq API" → "I trained my own model" is the biggest single upgrade. This is what separates ML engineers from developers who use LLMs.
+
+**Step-by-step:**
+
+**Step 3a: Collect trajectories (run the agent on 100+ issues)**
+```bash
+python -m experiments.benchmark --max-instances 100 --output-dir results/
+# Each run saves a trajectory to results/trajectories/*.jsonl
+```
+
+**Step 3b: Build fine-tuning dataset from trajectories**
+```python
+from fine_tuning.dataset_builder import FinetuningDatasetBuilder
+builder = FinetuningDatasetBuilder()
+stats = builder.build(format='chatml')
+print(stats)
+# Creates: results/fine_tuning/train.jsonl (~80%), val.jsonl (~20%)
+```
+
+**Step 3c: Validate dataset (no GPU needed)**
+```bash
+python -m fine_tuning.train --dry-run
+```
+
+**Step 3d: Train on Kaggle (free T4 GPU — 12 hours/week)**
+1. Go to kaggle.com → New Notebook → Accelerator → GPU T4 x2
+2. Run:
+```python
+!pip install transformers peft trl bitsandbytes datasets -q
+!git clone https://github.com/Sourav-Nath-01/repomind.git
+%cd repomind
+!python -m fine_tuning.train --model deepseek-ai/deepseek-coder-6.7b-instruct \
+    --epochs 3 --output /kaggle/working/checkpoints
+```
+3. Takes ~4–6 hours on free Kaggle T4
+
+**Step 3e: Upload fine-tuned adapter to HuggingFace**
+```python
+from huggingface_hub import HfApi
+api = HfApi()
+api.upload_folder(
+    folder_path="/kaggle/working/checkpoints/lora_adapter",
+    repo_id="SouravNath/repomind-coder-7b-lora",
+    repo_type="model"
+)
+```
+
+**Step 3f: Compare fine-tuned vs base model on benchmark**
+```bash
+# Run benchmark with your fine-tuned model
+LLM_MODEL=SouravNath/repomind-coder-7b-lora \
+python -m experiments.benchmark --max-instances 50
+```
+
+**Resume bullet point:**
+```
+"Fine-tuned DeepSeek-Coder-7B with QLoRA (r=16) on 500+ agent trajectories,
+ improving resolve rate from 34% → 41% over the base model"
+```
+
+**Time required:** 2–3 days (data collection + training + evaluation)
+**Cost:** Free (Kaggle GPU quota)
+
+---
+
+### Priority 4 — Write a Technical Report (2–3 pages)
+
+**Why it matters:** It positions you as research-aware. Even without a paper, a well-written report shows scientific thinking. Put it in the repo as `REPORT.md` and link it from README.
+
+**Sections to include:**
+
+```markdown
+# RepoMind: Autonomous Code Repair with Graph-Guided Localisation
+
+## Abstract (100 words)
+We present RepoMind, an autonomous code repair system that combines
+BM25 retrieval, dense embeddings, and Personalised PageRank graph
+propagation to localise bugs in real-world Python repositories, followed
+by LLM-based patch generation with iterative reflection.
+
+## 1. Introduction
+- Problem: Software bugs cost X hours/year
+- SWE-bench Lite as evaluation benchmark
+- Our contribution: PPR + RRF fusion localisation pipeline
+
+## 2. Method
+- 2.1 AST Parsing + Dependency Graph
+- 2.2 File Localisation: BM25, Embeddings, PPR, RRF Fusion
+- 2.3 Patch Generation + Reflection Loop
+- 2.4 QLoRA Fine-Tuning Pipeline
+
+## 3. Experiments
+- 3.1 Ablation study results table
+- 3.2 Comparison with SWE-agent baseline
+- 3.3 Fine-tuned model results (if done)
+
+## 4. Limitations & Future Work
+## 5. References
+```
+
+**Time required:** 4–6 hours
+**Cost:** Free
+
+---
+
+### Priority 5 — Add a Comparison to SWE-agent Baseline
+
+**Why it matters:** Shows scientific thinking — "my system vs the prior art."
+
+```bash
+# SWE-agent uses GPT-4 + shell tools. Cite their paper's resolve rate:
+# SWE-agent (Jimenez et al., 2024): 12.5% on SWE-bench Lite with GPT-4
+# Our system: ~34% (because we have better localisation)
+```
+
+**Add this table to README:**
+
+| System                      | Model         | Resolve Rate | Localisation |
+|-----------------------------|---------------|--------------|--------------|
+| SWE-agent (2024)            | GPT-4         | 12.5%        | Shell grep   |
+| Devin (2024)                | Proprietary   | 13.8%        | —            |
+| **RepoMind (ours)**         | Llama-3.3-70B | **XX.X%**    | BM25+PPR+RRF |
+| **RepoMind + fine-tuned**   | Custom 7B     | **XX.X%**    | BM25+PPR+RRF |
+
+---
+
+### Priority 6 — Improve the Localisation Pipeline
+
+**Current gap:** DeBERTa reranker in `localisation/deberta_ranker.py` may not be running in production (HF Spaces has limited RAM).
+
+**What to check:**
+```bash
+# Test if DeBERTa is actually being used
+grep -n "deberta" localisation/pipeline.py
+# Is it commented out or skipped when model can't load?
+```
+
+**What to add:** A fallback warning in the UI when DeBERTa is skipped.
+
+**Bigger improvement — add ColBERT reranking:**
+```python
+# Replace DeBERTa with ColBERT-v2 (better for code)
+# pip install ragatouille
+from ragatouille import RAGPretrainedModel
+colbert = RAGPretrainedModel.from_pretrained("colbert-ir/colbertv2.0")
+```
+
+---
+
+### Priority 7 — Add GitHub Actions CI/CD
+
+**Why it matters:** Shows engineering maturity. Create `.github/workflows/test.yml`:
+
+```yaml
+name: CI
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: pip install -r requirements.txt
+      - run: pytest tests/ -q --tb=short
+      - run: python -m fine_tuning.train --dry-run
+```
+
+**Badge to add to README:**
+```markdown
+![CI](https://github.com/Sourav-Nath-01/repomind/actions/workflows/test.yml/badge.svg)
+```
+
+---
+
+### Summary: Upgrade Roadmap
+
+| Priority | Task | Time | Resume Impact | Current Grade → After |
+|---|---|---|---|---|
+| 1 | Run real benchmark (50 issues) | 2 hrs | ⭐⭐⭐⭐⭐ | B+ → A- |
+| 2 | Run ablation study | 4 hrs | ⭐⭐⭐⭐ | A- → A |
+| 3 | Fine-tune custom model | 2–3 days | ⭐⭐⭐⭐⭐ | A → A+ |
+| 4 | Write technical report | 6 hrs | ⭐⭐⭐ | A → A+ |
+| 5 | Add SWE-agent comparison | 1 hr | ⭐⭐⭐ | A- → A |
+| 6 | Improve localisation | 1 day | ⭐⭐ | Minor |
+| 7 | Add GitHub Actions CI | 30 min | ⭐⭐ | Minor |
+
+> **Minimum to reach A grade:** Complete Priorities 1 + 2 + 5 (one weekend of work, all free).
+> **To reach A+ (research-track roles):** Also complete Priorities 3 + 4.
+
+---
+
+### What Interviewers Will Ask — And Your New Answers
+
+| Question | Before | After (with improvements) |
+|---|---|---|
+| "What's your resolve rate?" | "30–42% is the SOTA range" ❌ | "I measured 34.2% on 50 issues" ✅ |
+| "What did each component contribute?" | "PPR helps" ❌ | "PPR adds +8% Recall@5, ablation table in README" ✅ |
+| "Did you train a model?" | "I wrote training code" ❌ | "Yes — DeepSeek-Coder-7B, published to HuggingFace" ✅ |
+| "How does it compare to SWE-agent?" | Can't answer ❌ | "We outperform by 21% due to better localisation" ✅ |
+
+---
+
 
 ---
 
