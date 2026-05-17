@@ -380,6 +380,15 @@ class ReflectionAgent:
 
             app = graph.compile()
             final = app.invoke(state)
+
+            # LangGraph may return a plain dict instead of AgentState.
+            # Normalise back to the dataclass so downstream code is consistent.
+            if isinstance(final, dict):
+                final = AgentState(**{
+                    k: final[k] for k in AgentState.__dataclass_fields__
+                    if k in final
+                })
+
             return final
 
         except Exception as e:
@@ -389,10 +398,25 @@ class ReflectionAgent:
     def _log_trajectories(self, state: AgentState) -> None:
         """Write all attempt records to the trajectory logger."""
         from agent.trajectory_logger import TrajectoryEntry
-        for attempt_data in state.attempts:
+
+        # Handle both AgentState dataclass and plain dict (LangGraph compat)
+        if isinstance(state, dict):
+            attempts    = state.get("attempts", [])
+            instance_id = state.get("instance_id", "")
+            repo        = state.get("repo", "")
+            localised   = state.get("localised_files", [])
+            problem     = state.get("problem_statement", "")
+        else:
+            attempts    = state.attempts
+            instance_id = state.instance_id
+            repo        = state.repo
+            localised   = state.localised_files
+            problem     = state.problem_statement
+
+        for attempt_data in attempts:
             entry = TrajectoryEntry(
-                instance_id=state.instance_id,
-                repo=state.repo,
+                instance_id=instance_id,
+                repo=repo,
                 attempt=attempt_data["attempt_num"],
                 patch=attempt_data["patch"],
                 test_stdout=attempt_data["test_stdout"],
@@ -400,9 +424,9 @@ class ReflectionAgent:
                 pass_to_pass_results=attempt_data["pass_to_pass_results"],
                 resolved=attempt_data["resolved"],
                 failure_category=attempt_data["failure_category"],
-                elapsed_seconds=0.0,  # per-attempt timing tracked separately
-                localised_files=state.localised_files,
-                problem_statement=state.problem_statement,
+                elapsed_seconds=0.0,
+                localised_files=localised,
+                problem_statement=problem,
                 token_cost={},
             )
             self.traj_logger.log(entry)
