@@ -507,6 +507,41 @@ def _call_llm(
         except httpx.ConnectError as e:
             raise RuntimeError(f"Cannot reach Groq API — check network / GROQ_API_KEY: {e}") from e
 
+    # ── Google Gemini via httpx REST (no SDK needed) ───────────────────────
+    if client is None and provider == "gemini":
+        import httpx as _httpx
+
+        api_key = (os.environ.get("GEMINI_API_KEY") or "").strip()
+        if not api_key:
+            raise ValueError("GEMINI_API_KEY is not set. Add it as an HF Space secret.")
+
+        model_name = effective_model or "gemini-2.0-flash"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
+        payload = {
+            "system_instruction": {"parts": [{"text": SYSTEM_PROMPT}]},
+            "contents": [{"parts": [{"text": user_prompt}]}],
+            "generationConfig": {
+                "maxOutputTokens": settings.llm_max_tokens,
+                "temperature": settings.llm_temperature,
+            },
+        }
+        logger.info("Calling Gemini API: model=%s", model_name)
+        try:
+            with _httpx.Client(timeout=120.0) as http:
+                resp = http.post(url, json=payload)
+                resp.raise_for_status()
+                data = resp.json()
+
+            patch_text = data["candidates"][0]["content"]["parts"][0]["text"] or ""
+            meta = data.get("usageMetadata", {})
+            return patch_text, {
+                "prompt_tokens":     meta.get("promptTokenCount", 0),
+                "completion_tokens": meta.get("candidatesTokenCount", 0),
+                "total_tokens":      meta.get("totalTokenCount", 0),
+            }
+        except _httpx.HTTPStatusError as e:
+            raise RuntimeError(f"Gemini API error {e.response.status_code}: {e.response.text[:300]}") from e
+
     # ── OpenAI SDK fallback ────────────────────────────────────────────────
     if client is None:
         try:
