@@ -1,84 +1,87 @@
 """
 fine_tuning/kaggle_train.py
 ────────────────────────────────────────────────────────────
-Paste this entire file into a Kaggle Notebook (GPU T4 x2).
+KAGGLE NOTEBOOK — split into 2 cells:
 
-Steps in Kaggle:
-  1. kaggle.com → Create Notebook
-  2. Settings → Accelerator → GPU T4 x2
-  3. Paste this code in a cell and Run All
+▶ CELL 1: paste and run the CELL_1 block → kernel restarts automatically
+▶ CELL 2: paste and run the CELL_2 block → trains + uploads adapter
 
-What it does:
-  - Installs all dependencies
-  - Clones the repomind repo
-  - Downloads dataset from HuggingFace Hub
-  - Runs QLoRA fine-tuning (deepseek-coder-7b, r=16, 3 epochs)
-  - Uploads the LoRA adapter back to HuggingFace
-
-Expected time: 4-6 hours on free Kaggle T4.
+GPU required: T4 x2 (free on Kaggle)
+Add Secret: HF_TOKEN = <your_token_from_huggingface.co/settings/tokens>
 """
 
-# ── Step 1: Install dependencies ─────────────────────────────────────────────
-import subprocess, sys
+# ══════════════════════════════════════════════════════════════════════════════
+# CELL 1 — Install dependencies (kernel restarts automatically after this)
+# ══════════════════════════════════════════════════════════════════════════════
 
-def run(cmd): subprocess.run(cmd, shell=True, check=True)
+import subprocess, os
 
-run("pip install -q transformers==4.45.0 peft==0.13.0 trl==0.11.4 "
-    "bitsandbytes==0.43.3 datasets==3.1.0 accelerate==1.0.1 "
-    "huggingface_hub mlflow")
+def run(cmd):
+    subprocess.run(cmd, shell=True, check=True)
 
-# ── Step 2: Clone repo ───────────────────────────────────────────────────────
-import os
-run("git clone https://github.com/Sourav-Nath-01/repomind.git /kaggle/working/repomind")
+# Force-reinstall bitsandbytes GPU build + fix triton.ops error
+run("pip install -q --upgrade --force-reinstall bitsandbytes==0.45.5 triton==2.3.1")
+
+# Pin all other versions known to work on Kaggle T4
+run("pip install -q "
+    "transformers==4.46.3 "
+    "peft==0.13.2 "
+    "trl==0.12.2 "
+    "accelerate==1.1.1 "
+    "datasets==3.2.0 "
+    "huggingface_hub "
+    "mlflow")
+
+print("✅ All dependencies installed — kernel will now restart.")
+print("   After restart, run CELL 2 to start training.")
+
+# Kaggle requires kernel restart after pip install for GPU libs to load correctly
+os.kill(os.getpid(), 9)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# CELL 2 — Clone repo, download dataset, train, upload adapter
+#           Run this AFTER the kernel restarts from Cell 1
+# ══════════════════════════════════════════════════════════════════════════════
+
+import os, sys, json, subprocess
+
+HF_TOKEN    = os.environ.get("HF_TOKEN")        # from Kaggle Secrets
+HF_USERNAME = "SouravNath"
+DATASET_REPO = f"{HF_USERNAME}/swe-trajectories"
+ADAPTER_REPO = f"{HF_USERNAME}/repomind-deepseek-coder-7b-lora"
+MODEL_NAME   = "deepseek-ai/deepseek-coder-7b-instruct-v1.5"
+OUTPUT_DIR   = "/kaggle/working/checkpoints"
+ADAPTER_DIR  = f"{OUTPUT_DIR}/lora_adapter"
+
+# ── Clone repo ────────────────────────────────────────────────────────────────
+subprocess.run("git clone https://github.com/Sourav-Nath-01/repomind.git /kaggle/working/repomind",
+               shell=True, check=True)
 os.chdir("/kaggle/working/repomind")
 sys.path.insert(0, "/kaggle/working/repomind")
 
-# ── Step 3: Download dataset from HuggingFace ────────────────────────────────
-# NOTE: Before running, upload train.jsonl + val.jsonl to HuggingFace:
-#   huggingface-cli upload SouravNath01/swe-trajectories results/fine_tuning/train.jsonl train.jsonl --repo-type dataset
-#   huggingface-cli upload SouravNath01/swe-trajectories results/fine_tuning/val.jsonl val.jsonl --repo-type dataset
-
+# ── Download dataset from HuggingFace ────────────────────────────────────────
 from huggingface_hub import hf_hub_download
-import os
-
-HF_USERNAME = "SouravNath"             # confirmed HuggingFace username
-HF_DATASET_REPO = f"{HF_USERNAME}/swe-trajectories"
-HF_TOKEN = os.environ.get("HF_TOKEN")  # set in Kaggle Secrets
 
 os.makedirs("results/fine_tuning", exist_ok=True)
-
 for fname in ["train.jsonl", "val.jsonl"]:
-    hf_hub_download(
-        repo_id=HF_DATASET_REPO,
-        filename=fname,
-        repo_type="dataset",
-        local_dir="results/fine_tuning",
-        token=HF_TOKEN,
-    )
+    hf_hub_download(repo_id=DATASET_REPO, filename=fname,
+                    repo_type="dataset", local_dir="results/fine_tuning", token=HF_TOKEN)
     print(f"✅ Downloaded {fname}")
 
-# Quick sanity check
-import json
 for split in ["train", "val"]:
-    path = f"results/fine_tuning/{split}.jsonl"
-    rows = [json.loads(l) for l in open(path)]
-    print(f"  {split}: {len(rows)} examples | keys: {list(rows[0].keys())}")
+    rows = [json.loads(l) for l in open(f"results/fine_tuning/{split}.jsonl")]
+    print(f"  {split}: {len(rows)} examples")
 
-# ── Step 4: QLoRA Training ───────────────────────────────────────────────────
+# ── Load model in 4-bit ───────────────────────────────────────────────────────
 import torch
-from transformers import (
-    AutoModelForCausalLM, AutoTokenizer,
-    BitsAndBytesConfig, TrainingArguments,
-)
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
 from trl import SFTTrainer
 from datasets import load_dataset
+from transformers import TrainingArguments
 
-MODEL_NAME = "deepseek-ai/deepseek-coder-7b-instruct-v1.5"
-OUTPUT_DIR = "/kaggle/working/checkpoints"
-ADAPTER_DIR = f"{OUTPUT_DIR}/lora_adapter"
-
-print(f"\n🔧 Loading {MODEL_NAME} in 4-bit...")
+print(f"\n🔧 Loading {MODEL_NAME} in 4-bit NF4 ...")
 
 bnb_config = BitsAndBytesConfig(
     load_in_4bit=True,
@@ -92,7 +95,6 @@ model = AutoModelForCausalLM.from_pretrained(
     quantization_config=bnb_config,
     device_map="auto",
     trust_remote_code=True,
-    torch_dtype=torch.bfloat16,
     token=HF_TOKEN,
 )
 model = prepare_model_for_kbit_training(model)
@@ -103,12 +105,9 @@ tokenizer = AutoTokenizer.from_pretrained(
 if tokenizer.pad_token is None:
     tokenizer.pad_token = tokenizer.eos_token
 
-# LoRA config (r=16, alpha=32)
+# ── LoRA config (r=16, alpha=32) ─────────────────────────────────────────────
 lora_config = LoraConfig(
-    r=16,
-    lora_alpha=32,
-    lora_dropout=0.05,
-    bias="none",
+    r=16, lora_alpha=32, lora_dropout=0.05, bias="none",
     task_type="CAUSAL_LM",
     target_modules=["q_proj", "v_proj", "k_proj", "o_proj",
                     "gate_proj", "up_proj", "down_proj"],
@@ -116,41 +115,34 @@ lora_config = LoraConfig(
 model = get_peft_model(model, lora_config)
 model.print_trainable_parameters()
 
-# Load dataset
-dataset = load_dataset(
-    "json",
-    data_files={
-        "train": "results/fine_tuning/train.jsonl",
-        "validation": "results/fine_tuning/val.jsonl",
-    },
-)
-print(f"\n📦 Dataset: {dataset}")
+# ── Load + format dataset ────────────────────────────────────────────────────
+dataset = load_dataset("json", data_files={
+    "train":      "results/fine_tuning/train.jsonl",
+    "validation": "results/fine_tuning/val.jsonl",
+})
 
-# Format each example as a ChatML string for SFTTrainer
 def format_chatml(example):
-    msgs = example["messages"]
     text = ""
-    for msg in msgs:
-        role = msg["role"]
-        content = msg["content"]
-        text += f"<|im_start|>{role}\n{content}<|im_end|>\n"
+    for msg in example["messages"]:
+        text += f"<|im_start|>{msg['role']}\n{msg['content']}<|im_end|>\n"
     return {"text": text}
 
 dataset = dataset.map(format_chatml)
+print(f"📦 Dataset: {dataset}")
 
-# Training arguments
+# ── Training arguments ───────────────────────────────────────────────────────
 training_args = TrainingArguments(
     output_dir=OUTPUT_DIR,
     num_train_epochs=3,
     per_device_train_batch_size=2,
     per_device_eval_batch_size=2,
-    gradient_accumulation_steps=4,         # effective batch = 8
+    gradient_accumulation_steps=4,      # effective batch = 8
     learning_rate=2e-4,
     lr_scheduler_type="cosine",
     warmup_ratio=0.05,
     weight_decay=0.01,
     max_grad_norm=1.0,
-    optim="paged_adamw_8bit",
+    optim="adamw_torch",                # safe on all Kaggle envs
     bf16=True,
     save_strategy="steps",
     save_steps=25,
@@ -174,27 +166,20 @@ trainer = SFTTrainer(
     packing=False,
 )
 
-print("\n🚀 Starting QLoRA training...")
+print("\n🚀 Starting QLoRA training ...")
 trainer.train()
 
-# Save adapter
+# ── Save adapter ─────────────────────────────────────────────────────────────
+os.makedirs(ADAPTER_DIR, exist_ok=True)
 trainer.model.save_pretrained(ADAPTER_DIR)
 tokenizer.save_pretrained(ADAPTER_DIR)
-print(f"\n✅ LoRA adapter saved to {ADAPTER_DIR}")
+print(f"✅ LoRA adapter saved → {ADAPTER_DIR}")
 
-# ── Step 5: Upload adapter to HuggingFace ────────────────────────────────────
+# ── Upload to HuggingFace ─────────────────────────────────────────────────────
 from huggingface_hub import HfApi
-
 api = HfApi(token=HF_TOKEN)
-ADAPTER_REPO = f"{HF_USERNAME}/repomind-deepseek-coder-7b-lora"
-
 api.create_repo(ADAPTER_REPO, exist_ok=True, private=False)
-api.upload_folder(
-    folder_path=ADAPTER_DIR,
-    repo_id=ADAPTER_REPO,
-    repo_type="model",
-)
-print(f"\n🎉 Adapter uploaded to: https://huggingface.co/{ADAPTER_REPO}")
-print(f"\nResume bullet point:")
-print(f'  "Fine-tuned DeepSeek-Coder-7B with QLoRA (r=16) on 16 SWE-bench')
-print(f'   agent trajectories; adapter published at hf.co/{ADAPTER_REPO}"')
+api.upload_folder(folder_path=ADAPTER_DIR, repo_id=ADAPTER_REPO, repo_type="model")
+
+print(f"\n🎉 Done! Adapter live at:")
+print(f"   https://huggingface.co/{ADAPTER_REPO}")
