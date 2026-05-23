@@ -1,0 +1,155 @@
+
+🔬 Ablation Study on 50 instances
+
+─── Variant A: BM25 only ───
+  [1/50] astropy__astropy-12907
+    Rate limit — waiting 60s...
+    📝 resolved=False patched=True
+  [2/50] astropy__astropy-14182
+    Rate limit — waiting 60s...
+    ❌ resolved=False patched=False
+  [3/50] astropy__astropy-14365
+    Rate limit — waiting 60s...
+    📝 resolved=False patched=True
+  [4/50] astropy__astropy-14995
+    Rate limit — waiting 60s...
+    Rate limit — waiting 60s...
+    ❌ resolved=False patched=False
+  [5/50] astropy__astropy-6938
+    Rate limit — waiting 60s...
+    ❌ resolved=False patched=False
+  [6/50] astropy__astropy-7746
+    Rate limit — waiting 60s...
+    Rate limit — waiting 60s...
+    ❌ resolved=False patched=False
+  [7/50] django__django-10914
+    📝 resolved=False patched=True
+  [8/50] django__django-10924
+    📝 resolved=False patched=True
+  [9/50] django__django-11001
+    Rate limit — waiting 60s...
+    ❌ resolved=False patched=False
+  [10/50] django__django-11019
+    Rate limit — waiting 60s...
+    ✅ resolved=True patched=True
+  [11/50] django__django-11039
+    Rate limit — waiting 60s...
+    ❌ resolved=False patched=False
+  [12/50] django__django-11049
+    Rate limit — waiting 60s...
+    ✅ resolved=True patched=True
+  [13/50] django__django-11099
+    Rate limit — waiting 60s...
+    ❌ resolved=False patched=False
+  [14/50] django__django-11133
+    Rate limit — waiting 60s...
+    Rate limit — waiting 60s...
+    ❌ resolved=False patched=False
+  [15/50] django__django-11179
+    Rate limit — waiting 60s...
+    ❌ resolved=False patched=False
+  [16/50] django__django-11283
+    Rate limit — waiting 60s...
+    Rate limit — waiting 60s...
+    ✅ resolved=True patched=True
+  [17/50] django__django-11422
+    ✅ resolved=True patched=True
+  [18/50] django__django-11564
+    📝 resolved=False patched=True
+  [19/50] django__django-11583
+    Rate limit — waiting 60s...
+    ✅ resolved=True patched=True
+  [20/50] django__django-11620
+    ✅ resolved=True patched=True
+  [21/50] django__django-11630
+    Rate limit — waiting 60s...
+    ✅ resolved=True patched=True
+  [22/50] django__django-11742
+    📝 resolved=False patched=True
+  [23/50] django__django-11797
+    Rate limit — waiting 60s...
+    ✅ resolved=True patched=True
+  [24/50] django__django-11815
+    Rate limit — waiting 60s...
+    ✅ resolved=True patched=True
+  [25/50] django__django-11848
+    Rate limit — waiting 60s...
+    ❌ resolved=False patched=False
+  [26/50] django__django-11905
+    Rate limit — waiting 60s...
+    ❌ resolved=False patched=False
+  [27/50] django__django-11910
+    ✅ resolved=True patched=True
+  [28/50] django__django-11964
+    📝 resolved=False patched=True
+  [29/50] django__django-11999
+    ✅ resolved=True patched=True
+  [30/50] django__django-12113
+    Rate limit — waiting 60s...
+    ❌ resolved=False patched=False
+  [31/50] django__django-12125
+    Rate limit — waiting 60s...
+    📝 resolved=False patched=True
+  [32/50] django__django-12184
+    ✅ resolved=True patched=True
+  [33/50] django__django-12284
+    Rate limit — waiting 60s...
+    ✅ resolved=True patched=True
+  [34/50] django__django-12286
+    Rate limit — waiting 60s...
+    Rate limit — waiting 60s...
+    ❌ resolved=False patched=False
+  [35/50] django__django-12308
+    Rate limit — waiting 60s...
+    ❌ resolved=False patched=False
+  [36/50] django__django-12453
+    📝 resolved=False patched=True
+  [37/50] django__django-12470
+    Rate limit — waiting 60s...
+    Rate limit — waiting 60s...
+    📝 resolved=False patched=True
+  [38/50] django__django-12497
+    ✅ resolved=True patched=True
+  [39/50] django__django-12589
+    ✅ resolved=True patched=True
+  [40/50] django__django-12700
+    Rate limit — waiting 60s...
+    ✅ resolved=True patched=True
+  [41/50] django__django-12708
+    Rate limit — waiting 60s...
+    ❌ resolved=False patched=False
+  [42/50] django__django-12747
+    Rate limit — waiting 60s...
+    ✅ resolved=True patched=True
+  [43/50] django__django-12856
+    ✅ resolved=True patched=True
+  [44/50] django__django-12908
+    Rate limit — waiting 60s...
+    Rate limit — waiting 60s...
+    📝 resolved=False patched=True
+  [45/50] django__django-12915
+    Rate limit — waiting 60s...
+    ❌ resolved=False patched=False
+  [46/50] django__django-12983
+    Rate limit — waiting 60s...
+    ❌ resolved=False patched=False
+  [47/50] django__django-13028
+    Rate limit — waiting 60s...
+    ✅ resolved=True patched=True
+  [48/50] django__django-13033
+    ✅ resolved=True patched=True
+  [49/50] django__django-13158
+    ✅ resolved=True patched=True
+  [50/50] django__django-13220
+    Rate limit — waiting 60s...
+    ❌ resolved=False patched=False
+
+============================================================
+ABLATION STUDY RESULTS
+============================================================
+Variant                              Patched  Resolved    Rate
+------------------------------------------------------------
+A: BM25 only                              32        21   42.0%
+B: BM25 + Embeddings                       0         0    0.0%
+C: Full (Test-guided+Emb)                  0         0    0.0%
+============================================================

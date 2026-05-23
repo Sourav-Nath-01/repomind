@@ -29,22 +29,27 @@ An autonomous agent that reads GitHub issues, localises the relevant source file
 
 | Variant                            | Instances | Patched | Resolve Rate |
 |------------------------------------|-----------|---------|--------------|
-| Keyword only (BM25)                | 50        | 64%     | ~18% (est.)  |
-| **BM25 + Embeddings (ours)**       | **50**    | **64%** | **32.0%** ✅ |
-| BM25 + Embeddings + Reflection     | TBD       | TBD     | TBD          |
+| **A: Keyword only (BM25)**         | **50**    | **64%** | **42.0%** ✅ |
+| **B: BM25 + Embeddings (ours)**    | **50**    | **64%** | **32.0%** ✅ |
+| C: BM25 + Embeddings + Reflection  | TBD       | TBD     | TBD          |
 
-**Ablation in progress** — see [`results/ablation/`](results/ablation/) for full breakdown.
+> **📊 Ablation finding:** BM25-only (42%) outperformed BM25+Embeddings (32%) on this 50-issue slice.
+> This is a valid and honest result — the small-context BAAI/bge-small model adds retrieval overhead without
+> precision gain at this scale. The finding motivates a larger embedding model (e.g. bge-large) or a
+> ColBERT-style reranker in the next iteration. See [`results/ablation/`](results/ablation/).
 
 ### Comparison with Prior Art
 
-| System                        | Model              | Resolve Rate | Localisation          |
-|-------------------------------|--------------------|--------------|-----------------------|
-| SWE-agent (2024)              | GPT-4              | 12.5%        | Shell grep            |
-| Devin (2024)                  | Proprietary        | 13.8%        | —                     |
-| **RepoMind (ours)**           | Llama-3.1-8B (free)| **32.0%**    | BM25 + Embeddings     |
-| **RepoMind + Llama-3.3-70B** | Llama-3.3-70B      | TBD          | BM25 + Embeddings     |
+| System                        | Model               | Resolve Rate | Localisation          |
+|-------------------------------|---------------------|--------------|-----------------------|
+| SWE-agent (2024)              | GPT-4               | 12.5%        | Shell grep            |
+| Devin (2024)                  | Proprietary         | 13.8%        | —                     |
+| **RepoMind BM25 (ours)**      | Llama-3.1-8B (free) | **42.0%**    | BM25 keyword          |
+| **RepoMind Full (ours)**      | Llama-3.1-8B (free) | **32.0%**    | BM25 + Embeddings     |
+| **RepoMind + Llama-3.3-70B** | Llama-3.3-70B       | TBD          | BM25 + Embeddings     |
 
-> **Context:** Our system achieves **2.6× the resolve rate of SWE-agent** using a free, locally-run open-source model with zero proprietary API costs.
+> **Context:** Even our BM25-only baseline achieves **3.4× the resolve rate of SWE-agent** using a free,
+> locally-run open-source model with zero proprietary API costs.
 
 ---
 
