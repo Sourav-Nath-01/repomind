@@ -17,26 +17,25 @@ pinned: false
 
 
 
-> **ML Engineering Project** — LLM Agents · SWE-bench · DeepSeek-Coder · AST Parsing · Conformal Prediction · RL Fine-Tuning
+> **ML Engineering Project** — LLM Agents · SWE-bench · Gemini 2.5 Flash · AST Parsing · Conformal Prediction · RL Fine-Tuning
 
-[![Tests](https://img.shields.io/badge/tests-244%20passed-brightgreen)](#testing)
-[![Python](https://img.shields.io/badge/python-3.11%2B-blue)](https://python.org)
-[![SWE-bench Lite](https://img.shields.io/badge/SWE--bench%20Lite-30--42%25-orange)](https://swebench.com)
-[![License](https://img.shields.io/badge/license-MIT-green)](#)
-
-An autonomous agent that reads GitHub issues, localises the relevant source files, generates minimal unified diff patches, and self-corrects by reading its own failing test output — targeting **30–42% resolve rate on SWE-bench Lite**.
+An autonomous agent that reads GitHub issues, localises the relevant source files using an AST dependency graph, generates minimal unified diff patches via Gemini 2.5 Flash, and self-corrects by reading its own failing test output.
 
 ---
 
-## 🎯 Target Benchmarks
+## 🎯 Benchmark Status
 
-| Metric | Baseline | Ours |
-|--------|----------|------|
-| SWE-bench Lite Resolved | ~10–18% (GPT-4o naive) | **30–42%** |
-| File Localisation Recall@5 | ~41% | **74%+** |
-| Avg Attempts to Fix | — | **< 2.4** |
+> ⚠️ **Evaluation in progress** — Full official results pending Gemini API quota reset.
 
-Compare: Devin **13.86%** · SWE-agent **12.47%**
+| Metric | Value |
+|--------|-------|
+| SWE-bench Lite issues run | 50 |
+| Patches generated (Gemini 2.5 Flash) | 27 / 50 |
+| Quota limit hit | Gemini free-tier 250 RPD |
+| Official eval method | Local pytest on real repo at base\_commit |
+| Verified resolve rate | **TBD** — real eval running |
+
+**Context:** The SWE-bench top models achieve 40–55% (Claude 3.5 Sonnet). Open-source agents average 12–27%.
 
 ---
 
