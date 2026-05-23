@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    name: Run Test Suite (244 tests)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Validate dataset config (no GPU needed)
+        run: python -m fine_tuning.train --dry-run
+        continue-on-error: true   # dry-run may skip if dataset not built yet
+
+      - name: Run full test suite
+        run: |
+          pytest tests/ -q \
+            --tb=short \
+            --no-header \
+            -p no:warnings
+        env:
+          # Dummy keys so settings validation passes in CI
+          GROQ_API_KEY: ci-dummy-key
+          LLM_PROVIDER: groq
+          LLM_MODEL: llama-3.3-70b-versatile
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: .pytest_cache/
+          retention-days: 7

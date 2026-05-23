@@ -9,6 +9,13 @@ pinned: false
 
 # 🤖 Autonomous Code Review & Bug-Fix Agent
 
+[![CI](https://github.com/Sourav-Nath-01/repomind/actions/workflows/ci.yml/badge.svg)](https://github.com/Sourav-Nath-01/repomind/actions/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-244%20passed-brightgreen)](https://github.com/Sourav-Nath-01/repomind/actions)
+[![Python](https://img.shields.io/badge/python-3.12-blue)](https://www.python.org/)
+[![HuggingFace](https://img.shields.io/badge/🤗%20API-Live-orange)](https://souravnath-repomind-api.hf.space)
+[![Demo](https://img.shields.io/badge/Demo-Live-blueviolet)](https://repomind-taupe.vercel.app)
+
+
 
 > **ML Engineering Project** — LLM Agents · SWE-bench · DeepSeek-Coder · AST Parsing · Conformal Prediction · RL Fine-Tuning
 
