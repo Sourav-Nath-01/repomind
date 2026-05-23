@@ -133,56 +133,56 @@ class GroqClient(LLMClient):
 
 class GeminiClient(LLMClient):
     """
-    Google Gemini API — free tier.
-    gemini-1.5-flash: 15 RPM, 1,000,000 tokens/day — perfect for SWE-bench eval.
-    gemini-1.5-pro:   2 RPM, 32,000 tokens/day (slower, use for hard cases).
-    gemini-2.0-flash: latest, fast, generous free tier.
+    Google Gemini API via direct REST calls — no SDK needed.
+    Uses httpx which is already in requirements.txt.
+
+    gemini-2.0-flash: fast, generous free tier (15 RPM, 1M tokens/day)
+    gemini-2.5-flash: newest model, same free tier
 
     Sign up: https://aistudio.google.com (no credit card required)
     Set env var: GEMINI_API_KEY=AIza...
     """
 
+    BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models"
+
     def __init__(self, model: str = "gemini-2.0-flash"):
         self._model = model
-        self._genai = None
 
     @property
     def model_name(self) -> str:
         return f"gemini/{self._model}"
 
-    def _get_client(self):
-        if self._genai is None:
-            try:
-                import google.generativeai as genai
-                genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
-                self._genai = genai
-            except ImportError:
-                raise ImportError("Install: pip install google-generativeai")
-        return self._genai
-
     def complete(self, system: str, user: str, max_tokens: int = 4096, temperature: float = 0.2) -> tuple[str, dict]:
-        genai = self._get_client()
+        import httpx
+
+        api_key = os.environ.get("GEMINI_API_KEY", "")
+        if not api_key:
+            raise EnvironmentError("GEMINI_API_KEY not set")
+
+        url = f"{self.BASE_URL}/{self._model}:generateContent?key={api_key}"
+        payload = {
+            "system_instruction": {"parts": [{"text": system}]},
+            "contents": [{"parts": [{"text": user}]}],
+            "generationConfig": {
+                "maxOutputTokens": max_tokens,
+                "temperature": temperature,
+            },
+        }
+
         start = time.monotonic()
         try:
-            model = genai.GenerativeModel(
-                model_name=self._model,
-                system_instruction=system,
-                generation_config=genai.GenerationConfig(
-                    max_output_tokens=max_tokens,
-                    temperature=temperature,
-                )
-            )
-            response = model.generate_content(user)
-            text = response.text or ""
-            # Gemini doesn't always return usage metadata in free tier
-            prompt_tokens = getattr(getattr(response, "usage_metadata", None), "prompt_token_count", 0) or 0
-            completion_tokens = getattr(getattr(response, "usage_metadata", None), "candidates_token_count", 0) or 0
+            resp = httpx.post(url, json=payload, timeout=120)
+            resp.raise_for_status()
+            data = resp.json()
+
+            text = data["candidates"][0]["content"]["parts"][0]["text"]
+            meta = data.get("usageMetadata", {})
             usage = {
-                "prompt_tokens": prompt_tokens,
-                "completion_tokens": completion_tokens,
-                "total_tokens": prompt_tokens + completion_tokens,
+                "prompt_tokens":     meta.get("promptTokenCount", 0),
+                "completion_tokens": meta.get("candidatesTokenCount", 0),
+                "total_tokens":      meta.get("totalTokenCount", 0),
             }
-            logger.info("Gemini %s: %.1fs", self._model, time.monotonic() - start)
+            logger.info("Gemini %s: %.1fs | %d tokens", self._model, time.monotonic() - start, usage["total_tokens"])
             return text, usage
         except Exception as e:
             logger.warning("Gemini error: %s", e)
