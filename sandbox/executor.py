@@ -156,21 +156,34 @@ class SandboxExecutor:
 
         commit_label = base_commit[:8] if base_commit and base_commit != "HEAD" else "HEAD"
         logger.info("Cloning %s @ %s", repo, commit_label)
+
+        # Use treeless clone: fetches full commit graph (so old SHAs are reachable)
+        # but only downloads file blobs for the checked-out tree — fast + space-efficient.
         clone_result = self._run_local(
-            ["git", "clone", "--depth=1", github_url, str(workspace_dir)],
-            timeout=120,  # network operation — longer timeout
+            ["git", "clone", "--filter=blob:none", github_url, str(workspace_dir)],
+            timeout=300,
         )
+        if not clone_result.success:
+            # Fallback: full clone
+            logger.warning("Treeless clone failed, trying full clone...")
+            clone_result = self._run_local(
+                ["git", "clone", github_url, str(workspace_dir)],
+                timeout=600,
+            )
         if not clone_result.success:
             logger.error("Clone failed: %s", clone_result.stderr[:500])
             return clone_result
 
-        # Only checkout a specific commit if one is explicitly provided
-        # (skip when empty string or HEAD — --depth=1 already checked out latest)
+        # Checkout the exact SWE-bench base commit
         if base_commit and base_commit.strip() and base_commit.upper() != "HEAD":
             checkout_result = self._run_local(
                 ["git", "checkout", base_commit],
                 cwd=workspace_dir,
+                timeout=60,
             )
+            if not checkout_result.success:
+                logger.error("Checkout %s failed: %s", commit_label, checkout_result.stderr[:200])
+                return checkout_result
             return checkout_result
 
         return clone_result
