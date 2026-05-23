@@ -1,0 +1,25 @@
+# Lightweight requirements for CI test suite only
+# Heavy packages (torch, faiss, sentence-transformers) are mocked in tests
+
+# Core
+pydantic>=2.7.0
+pydantic-settings>=2.2.0
+python-dotenv>=1.0.0
+httpx>=0.27.0
+tenacity>=8.3.0
+
+# AST parsing (needed for phase2 tests)
+tree-sitter>=0.22.0
+tree-sitter-python>=0.22.0
+
+# Code understanding
+networkx>=3.3
+rank-bm25>=0.2.2
+numpy>=1.26.0
+scipy>=1.13.0
+diskcache>=5.6.3
+unidiff>=0.7.5
+
+# Test runner
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
