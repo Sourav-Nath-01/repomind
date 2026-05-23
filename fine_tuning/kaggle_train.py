@@ -41,7 +41,7 @@ sys.path.insert(0, "/kaggle/working/repomind")
 from huggingface_hub import hf_hub_download
 import os
 
-HF_USERNAME = "SouravNath01"           # ← your HF username
+HF_USERNAME = "SouravNath"             # confirmed HuggingFace username
 HF_DATASET_REPO = f"{HF_USERNAME}/swe-trajectories"
 HF_TOKEN = os.environ.get("HF_TOKEN")  # set in Kaggle Secrets
 
