@@ -195,8 +195,12 @@ with open("/kaggle/working/train_script.py", "w") as f:
 # ══════════════════════════════════════════════════════════════════════════════
 print("🚀 Starting training subprocess (this avoids Jupyter kernel restart issues) ...")
 
+# Restrict PyTorch to a single GPU to prevent DataParallel tensor mismatch bugs
+env = os.environ.copy()
+env["CUDA_VISIBLE_DEVICES"] = "0"
+
 # Use sys.executable to run with the current python interpreter
-result = subprocess.run([sys.executable, "/kaggle/working/train_script.py"])
+result = subprocess.run([sys.executable, "/kaggle/working/train_script.py"], env=env)
 
 if result.returncode != 0:
     print("❌ Training failed! Check the logs above.")
