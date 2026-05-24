@@ -1,52 +1,63 @@
 """
 fine_tuning/kaggle_train.py
 ────────────────────────────────────────────────────────────
-KAGGLE NOTEBOOK — split into 2 cells:
+KAGGLE NOTEBOOK — Single Cell Version (Compatible with "Save & Run All")
 
-▶ CELL 1: paste and run the CELL_1 block → kernel restarts automatically
-▶ CELL 2: paste and run the CELL_2 block → trains + uploads adapter
+Instructions:
+1. Create a new Kaggle Notebook (GPU T4 x2).
+2. Add your HF_TOKEN in Kaggle Secrets (Add-ons -> Secrets).
+3. Paste ALL of this code into a SINGLE cell.
+4. Click "Save Version" -> "Save & Run All (Commit)".
 
-GPU required: T4 x2 (free on Kaggle)
-Add Secret: HF_TOKEN = <your_token_from_huggingface.co/settings/tokens>
+This script automatically handles pip installs and then spawns a subprocess 
+to run the training, which bypasses the need to restart the Jupyter kernel!
 """
 
-# ══════════════════════════════════════════════════════════════════════════════
-# CELL 1 — Install dependencies (kernel restarts automatically after this)
-# ══════════════════════════════════════════════════════════════════════════════
+import subprocess
+import sys
+import os
 
-import subprocess, os
+# ══════════════════════════════════════════════════════════════════════════════
+# 1. Install dependencies (executed in the main notebook process)
+# ══════════════════════════════════════════════════════════════════════════════
+print("⏳ Installing dependencies...")
 
-def run(cmd):
+def run_cmd(cmd):
     subprocess.run(cmd, shell=True, check=True)
 
 # Force-reinstall bitsandbytes GPU build + fix triton.ops error
-run("pip install -q --upgrade --force-reinstall bitsandbytes==0.45.5 triton==2.3.1")
+run_cmd("pip install -q --upgrade --force-reinstall bitsandbytes==0.45.5 triton==2.3.1")
 
 # Pin all other versions known to work on Kaggle T4
-run("pip install -q "
-    "transformers==4.46.3 "
-    "peft==0.13.2 "
-    "trl==0.12.2 "
-    "accelerate==1.1.1 "
-    "datasets==3.2.0 "
-    "huggingface_hub "
-    "mlflow")
+run_cmd("pip install -q transformers==4.46.3 peft==0.13.2 trl==0.12.2 accelerate==1.1.1 datasets==3.2.0 huggingface_hub mlflow")
 
-print("✅ All dependencies installed — kernel will now restart.")
-print("   After restart, run CELL 2 to start training.")
-
-# Kaggle requires kernel restart after pip install for GPU libs to load correctly
-os.kill(os.getpid(), 9)
-
+print("✅ Dependencies installed.")
 
 # ══════════════════════════════════════════════════════════════════════════════
-# CELL 2 — Clone repo, download dataset, train, upload adapter
-#           Run this AFTER the kernel restarts from Cell 1
+# 2. Write the training script to a file
 # ══════════════════════════════════════════════════════════════════════════════
+# We run the actual training in a subprocess so that Python loads the freshly
+# installed pip packages from scratch, avoiding Jupyter kernel state issues.
 
+TRAIN_SCRIPT = """
 import os, sys, json, subprocess
+from huggingface_hub import hf_hub_download, HfApi
+import torch
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, TrainingArguments
+from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
+from trl import SFTTrainer
+from datasets import load_dataset
 
-HF_TOKEN    = os.environ.get("HF_TOKEN")        # from Kaggle Secrets
+from kaggle_secrets import UserSecretsClient
+try:
+    user_secrets = UserSecretsClient()
+    HF_TOKEN = user_secrets.get_secret("HF_TOKEN")
+except Exception:
+    HF_TOKEN = os.environ.get("HF_TOKEN")
+    
+if not HF_TOKEN:
+    raise ValueError("HF_TOKEN not found! Please add it to Kaggle Secrets.")
+
 HF_USERNAME = "SouravNath"
 DATASET_REPO = f"{HF_USERNAME}/swe-trajectories"
 ADAPTER_REPO = f"{HF_USERNAME}/repomind-deepseek-coder-7b-lora"
@@ -55,14 +66,11 @@ OUTPUT_DIR   = "/kaggle/working/checkpoints"
 ADAPTER_DIR  = f"{OUTPUT_DIR}/lora_adapter"
 
 # ── Clone repo ────────────────────────────────────────────────────────────────
-subprocess.run("git clone https://github.com/Sourav-Nath-01/repomind.git /kaggle/working/repomind",
-               shell=True, check=True)
+subprocess.run("git clone https://github.com/Sourav-Nath-01/repomind.git /kaggle/working/repomind || true", shell=True, check=False)
 os.chdir("/kaggle/working/repomind")
 sys.path.insert(0, "/kaggle/working/repomind")
 
 # ── Download dataset from HuggingFace ────────────────────────────────────────
-from huggingface_hub import hf_hub_download
-
 os.makedirs("results/fine_tuning", exist_ok=True)
 for fname in ["train.jsonl", "val.jsonl"]:
     hf_hub_download(repo_id=DATASET_REPO, filename=fname,
@@ -70,18 +78,12 @@ for fname in ["train.jsonl", "val.jsonl"]:
     print(f"✅ Downloaded {fname}")
 
 for split in ["train", "val"]:
-    rows = [json.loads(l) for l in open(f"results/fine_tuning/{split}.jsonl")]
+    with open(f"results/fine_tuning/{split}.jsonl") as f:
+        rows = [json.loads(l) for l in f]
     print(f"  {split}: {len(rows)} examples")
 
 # ── Load model in 4-bit ───────────────────────────────────────────────────────
-import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
-from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
-from trl import SFTTrainer
-from datasets import load_dataset
-from transformers import TrainingArguments
-
-print(f"\n🔧 Loading {MODEL_NAME} in 4-bit NF4 ...")
+print(f"\\n🔧 Loading {MODEL_NAME} in 4-bit NF4 ...")
 
 bnb_config = BitsAndBytesConfig(
     load_in_4bit=True,
@@ -124,11 +126,10 @@ dataset = load_dataset("json", data_files={
 def format_chatml(example):
     text = ""
     for msg in example["messages"]:
-        text += f"<|im_start|>{msg['role']}\n{msg['content']}<|im_end|>\n"
+        text += f"<|im_start|>{msg['role']}\\n{msg['content']}<|im_end|>\\n"
     return {"text": text}
 
 dataset = dataset.map(format_chatml)
-print(f"📦 Dataset: {dataset}")
 
 # ── Training arguments ───────────────────────────────────────────────────────
 training_args = TrainingArguments(
@@ -142,7 +143,7 @@ training_args = TrainingArguments(
     warmup_ratio=0.05,
     weight_decay=0.01,
     max_grad_norm=1.0,
-    optim="adamw_torch",                # safe on all Kaggle envs
+    optim="adamw_torch",
     bf16=True,
     save_strategy="steps",
     save_steps=25,
@@ -166,7 +167,7 @@ trainer = SFTTrainer(
     packing=False,
 )
 
-print("\n🚀 Starting QLoRA training ...")
+print("\\n🚀 Starting QLoRA training ...")
 trainer.train()
 
 # ── Save adapter ─────────────────────────────────────────────────────────────
@@ -176,10 +177,25 @@ tokenizer.save_pretrained(ADAPTER_DIR)
 print(f"✅ LoRA adapter saved → {ADAPTER_DIR}")
 
 # ── Upload to HuggingFace ─────────────────────────────────────────────────────
-from huggingface_hub import HfApi
 api = HfApi(token=HF_TOKEN)
 api.create_repo(ADAPTER_REPO, exist_ok=True, private=False)
 api.upload_folder(folder_path=ADAPTER_DIR, repo_id=ADAPTER_REPO, repo_type="model")
 
-print(f"\n🎉 Done! Adapter live at:")
-print(f"   https://huggingface.co/{ADAPTER_REPO}")
+print(f"\\n🎉 Done! Adapter live at: https://huggingface.co/{ADAPTER_REPO}")
+"""
+
+with open("/kaggle/working/train_script.py", "w") as f:
+    f.write(TRAIN_SCRIPT)
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 3. Run the training script in a fresh subprocess
+# ══════════════════════════════════════════════════════════════════════════════
+print("🚀 Starting training subprocess (this avoids Jupyter kernel restart issues) ...")
+
+# Use sys.executable to run with the current python interpreter
+result = subprocess.run([sys.executable, "/kaggle/working/train_script.py"])
+
+if result.returncode != 0:
+    print("❌ Training failed! Check the logs above.")
+else:
+    print("✅ Training complete!")
