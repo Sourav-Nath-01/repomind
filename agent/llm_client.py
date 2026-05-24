@@ -239,6 +239,90 @@ class OllamaClient(LLMClient):
         return text, usage
 
 
+# ── HuggingFace Inference API client (fine-tuned adapter) ────────────────────
+
+class HFInferenceClient(LLMClient):
+    """
+    HuggingFace Inference API — runs any public model/adapter hosted on HF Hub.
+    Free for public models (rate-limited but sufficient for evaluation).
+
+    Best for: testing fine-tuned adapters without a local GPU.
+    Set env var: HF_TOKEN=hf_...
+                 LLM_PROVIDER=hf
+                 LLM_MODEL=SouravNath/repomind-deepseek-coder-7b-lora
+    """
+
+    HF_API_BASE = "https://api-inference.huggingface.co/models"
+
+    def __init__(self, model: str = "SouravNath/repomind-deepseek-coder-7b-lora"):
+        self._model = model
+
+    @property
+    def model_name(self) -> str:
+        return f"hf/{self._model}"
+
+    def complete(
+        self,
+        system: str,
+        user: str,
+        max_tokens: int = 2048,
+        temperature: float = 0.2,
+    ) -> tuple[str, dict]:
+        import httpx
+
+        api_key = os.environ.get("HF_TOKEN", "")
+        headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
+
+        # Format as ChatML for DeepSeek models
+        prompt = (
+            f"<|im_start|>system\n{system}<|im_end|>\n"
+            f"<|im_start|>user\n{user}<|im_end|>\n"
+            f"<|im_start|>assistant\n"
+        )
+
+        payload = {
+            "inputs": prompt,
+            "parameters": {
+                "max_new_tokens": max_tokens,
+                "temperature": temperature,
+                "return_full_text": False,
+                "stop": ["<|im_end|>"],
+            },
+        }
+
+        start = time.monotonic()
+        url = f"{self.HF_API_BASE}/{self._model}"
+        try:
+            with httpx.Client(timeout=180.0) as http:
+                resp = http.post(url, json=payload, headers=headers)
+                if resp.status_code == 503:
+                    # Model is loading — wait and retry once
+                    logger.warning("HF model loading, waiting 30s...")
+                    time.sleep(30)
+                    resp = http.post(url, json=payload, headers=headers)
+                resp.raise_for_status()
+
+            data = resp.json()
+            if isinstance(data, list):
+                text = data[0].get("generated_text", "")
+            else:
+                text = data.get("generated_text", "")
+
+            # Strip the stop token if present
+            text = text.split("<|im_end|>")[0].strip()
+
+            total = len(text.split())
+            usage = {"prompt_tokens": 0, "completion_tokens": total, "total_tokens": total}
+            logger.info(
+                "HF Inference %s: %.1fs | ~%d tokens",
+                self._model, time.monotonic() - start, total,
+            )
+            return text, usage
+        except Exception as e:
+            logger.warning("HF Inference error: %s", e)
+            raise
+
+
 # ── OpenAI client (paid, kept as optional fallback) ───────────────────────────
 
 class OpenAIClient(LLMClient):
@@ -303,6 +387,9 @@ def get_llm_client(provider: Optional[str] = None, model: Optional[str] = None) 
         if os.environ.get("GROQ_API_KEY"):
             provider = "groq"
             logger.info("Auto-selected provider: Groq (GROQ_API_KEY found)")
+        elif os.environ.get("HF_TOKEN") and os.environ.get("HF_MODEL"):
+            provider = "hf"
+            logger.info("Auto-selected provider: HF Inference (HF_TOKEN + HF_MODEL found)")
         elif os.environ.get("GEMINI_API_KEY"):
             provider = "gemini"
             logger.info("Auto-selected provider: Gemini (GEMINI_API_KEY found)")
@@ -316,13 +403,16 @@ def get_llm_client(provider: Optional[str] = None, model: Optional[str] = None) 
             raise EnvironmentError(
                 "No LLM provider configured. Set one of:\n"
                 "  GROQ_API_KEY   — free at https://console.groq.com\n"
+                "  HF_TOKEN       — free at https://huggingface.co/settings/tokens\n"
                 "  GEMINI_API_KEY — free at https://aistudio.google.com\n"
                 "  Install Ollama — https://ollama.com (fully local, free)\n"
                 "  OPENAI_API_KEY — paid"
             )
 
+    default_hf_model = os.environ.get("HF_MODEL", "SouravNath/repomind-deepseek-coder-7b-lora")
     clients = {
         "groq":   lambda: GroqClient(model or "deepseek-r1-distill-llama-70b"),
+        "hf":     lambda: HFInferenceClient(model or default_hf_model),
         "gemini": lambda: GeminiClient(model or "gemini-2.0-flash"),
         "ollama": lambda: OllamaClient(model or "deepseek-coder-v2:16b"),
         "openai": lambda: OpenAIClient(model or "gpt-4o"),
