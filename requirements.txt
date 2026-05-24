@@ -58,3 +58,4 @@ slowapi>=0.1.9
 matplotlib>=3.9.0
 seaborn>=0.13.0
 rich>=13.7.0                  # beautiful CLI output
+ragatouille>=0.2.0

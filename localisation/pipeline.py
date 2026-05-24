@@ -4,7 +4,7 @@ localisation/pipeline.py
 Full two-stage localisation pipeline.
 
 Stage 1: BM25 + Embeddings (coarse ranking) → RRF fusion
-Stage 2: DeBERTa cross-encoder (precision re-ranking)
+Stage 2: ColBERT-v2 late-interaction (precision re-ranking)
 
 Also handles:
   - Failure categorisation (wrong-file, partial-file, missing-dependency, ambiguous-issue)
@@ -118,7 +118,7 @@ class LocalisationPipeline:
         self,
         cache_dir: Path = Path(".cache"),
         embedding_model: str = "text-embedding-3-small",
-        deberta_model: str = "microsoft/deberta-v3-small",
+        ranker_model: str = "colbert-ir/colbertv2.0",
         alpha_bm25: float = 0.4,
         alpha_embed: float = 0.4,
         alpha_ppr: float = 0.2,
@@ -126,7 +126,7 @@ class LocalisationPipeline:
         embed_top_k: int = 20,
         ppr_top_k: int = 20,
         final_top_k: int = 10,
-        use_deberta: bool = True,
+        use_colbert: bool = True,
         use_ppr: bool = True,
         use_embeddings: bool = True,
         track_mlflow: bool = False,
@@ -160,9 +160,9 @@ class LocalisationPipeline:
                 cache_dir=cache_dir / "embeddings",
             )
 
-        if use_deberta:
-            from localisation.deberta_ranker import DeBERTaRanker
-            self._ranker = DeBERTaRanker(model_name_or_path=deberta_model)
+        if use_colbert:
+            from localisation.colbert_ranker import ColBERTRanker
+            self._ranker = ColBERTRanker(model_name_or_path=ranker_model)
 
     def index_repo(
         self,
@@ -253,7 +253,7 @@ class LocalisationPipeline:
             top_k=top_k * 2,  # overshoot for Stage 2 input
         )
 
-        # ── Stage 2: DeBERTa re-ranking ───────────────────────────────────
+        # ── Stage 2: ColBERT re-ranking ───────────────────────────────────
         fs_summary_map = {fs.file_path: fs.summary_text for fs in self._file_symbols}
         stage2_candidates = [
             (hit.file_path, fs_summary_map.get(hit.file_path, ""))
@@ -284,7 +284,7 @@ class LocalisationPipeline:
                 for r in ranked_files
             ]
         else:
-            # Stage 1 output (no DeBERTa re-ranking)
+            # Stage 1 output (no ColBERT re-ranking)
             hits = [
                 LocalisationHit(
                     file_path=h.file_path,
@@ -305,7 +305,7 @@ class LocalisationPipeline:
         # ── Evaluation metrics ────────────────────────────────────────────
         result = LocalisationResult(hits=hits, elapsed_seconds=elapsed)
         if gold_files:
-            from localisation.deberta_ranker import recall_at_k
+            from localisation.deberta_ranker import recall_at_k # reuse metric func
             result.recall_at_5 = recall_at_k(result.top_k_paths, gold_files, k=5)
             result.recall_at_10 = recall_at_k(result.top_k_paths, gold_files, k=10)
             result.failure_category = categorise_localisation_failure(
