@@ -25,6 +25,9 @@ print("⏳ Installing dependencies...")
 def run_cmd(cmd):
     subprocess.run(cmd, shell=True, check=True)
 
+# Uninstall torchvision/torchaudio to prevent PyTorch version mismatch errors
+run_cmd("pip uninstall -y torchvision torchaudio")
+
 # Force-reinstall bitsandbytes GPU build + fix triton.ops error
 run_cmd("pip install -q --upgrade --force-reinstall bitsandbytes==0.45.5 triton==2.3.1")
 
