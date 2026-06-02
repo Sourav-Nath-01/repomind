@@ -394,62 +394,7 @@ precision semantics (e.g., floating-point tolerances in WCS computations), and
 \texttt{.c}), which our Python-only AST parser cannot analyse.
 
 %% ─────────────────────────────────────────────────────────────────────────────
-\section{Fine-Tuning Dataset}
-
-We release a supervised fine-tuning (SFT) dataset of 16 verified
-(\textit{problem\_statement}, \textit{patch}) pairs in ChatML format, derived
-from successfully resolved benchmark trajectories.
-
-\paragraph{Format.}
-Each example contains three turns:
-\begin{lstlisting}
-<|im_start|>system
-You are an expert Python software engineer...
-<|im_start|>user
-Repository: django/django
-Instance: django__django-11019
-
-Bug Report: <problem_statement>
-<|im_start|>assistant
-<<<SEARCH
-<exact buggy lines>
-===REPLACE
-<fixed lines>
->>>END
-\end{lstlisting}
-
-\paragraph{Statistics.}
-The dataset contains 12 training and 4 validation examples
-(${\sim}481$ tokens per example on average). All examples are Django instances.
-The dataset is available at \texttt{SouravNath/swe-trajectories} on the
-Hugging Face Hub.
-
-\paragraph{Fine-tuning configuration.}
-We fine-tune \texttt{deepseek-coder-7b-instruct-v1.5} with QLoRA (4-bit NF4,
-$r{=}16$, $\alpha{=}32$) for 3 epochs using \texttt{SFTTrainer} from TRL on a
-free Kaggle T4 GPU. Effective batch size is 8 (2 per device $\times$ 4
-gradient accumulation steps), learning rate $2\times10^{-4}$ with cosine
-annealing.
-
-\paragraph{Training results.}
-The adapter converged to a training loss of \textbf{2.36} in 317 seconds
-(${\sim}5$ minutes) on a single T4 GPU. The fine-tuned LoRA adapter
-(150\,MB, \texttt{adapter\_model.safetensors}) is publicly available at
-\texttt{SouravNath/repomind-deepseek-coder-7b-lora} on the Hugging Face Hub
-and can be loaded on top of the base model with a single
-\texttt{PeftModel.from\_pretrained()} call. Evaluating the adapter against
-the base model on the 50-instance ablation set is left as immediate future
-work, as the training data size ($n{=}16$) makes meaningful improvement
-unlikely without a larger corpus.
-
-%% ─────────────────────────────────────────────────────────────────────────────
 \section{Limitations and Future Work}
-
-\paragraph{Dataset scale.}
-16 fine-tuning examples is insufficient for reliable improvement; we expect
-overfitting with the current configuration. Collecting 200+ resolved
-trajectories---achievable by running the agent on the full 300-instance
-SWE-bench Lite set---would enable meaningful QLoRA improvement.
 
 \paragraph{Localisation ceiling.}
 Even with perfect file localisation, the LLM must generate a syntactically
@@ -463,15 +408,15 @@ would be required.
 
 \paragraph{Future work.}
 \begin{itemize}
-  \item Extend the fine-tuning dataset to 200+ examples by running the agent
-        on the full 300-instance SWE-bench Lite set and measure post-fine-tune
-        resolve rate vs.\ base model.
+  \item Construct a supervised fine-tuning (SFT) dataset of verified bug-fix 
+        trajectories by running the agent on the full 300-instance SWE-bench 
+        Lite set, to train a specialized, open-weight coding model.
   \item Implement Personalised PageRank~\cite{page1999pagerank} propagation
         over the AST import graph to surface indirect dependency files.
   \item Add conformal prediction~\cite{angelopoulos2023gentle} for principled
         uncertainty quantification on localisation confidence.
-  \item Explore speculative decoding or cached KV with the fine-tuned adapter
-        to reduce per-instance latency below 10 seconds.
+  \item Explore speculative decoding or cached KV to reduce per-instance 
+        latency below 10 seconds.
 \end{itemize}
 
 %% ─────────────────────────────────────────────────────────────────────────────
