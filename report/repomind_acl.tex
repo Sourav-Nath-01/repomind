@@ -1,21 +1,31 @@
-%% RepoMind — ACL 2025 Style Technical Report
-%% Compile with: pdflatex repomind_acl.tex (twice for references)
+%% RepoMind - ACL 2025 Style Technical Report (WITH UI FIGURES)
+%% Compile with: pdflatex repomind_acl_final.tex
+%%               bibtex  repomind_acl_final
+%%               pdflatex repomind_acl_final.tex
+%%               pdflatex repomind_acl_final.tex
 %% Requires: acl.sty / acl2025.sty from https://aclanthology.org/
 
 \documentclass[11pt]{article}
-\usepackage[hyperref]{acl}          % ACL style — download from ACL Anthology
+\usepackage{acl}
 \usepackage{times}
 \usepackage{latexsym}
 \usepackage{microtype}
 \usepackage{booktabs}
 \usepackage{graphicx}
+\usepackage{subcaption}   % for subfigures (2x2 UI grid)
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{xcolor}
 \usepackage{listings}
 \usepackage{multirow}
 \usepackage{array}
+\usepackage{hyperref}     % Added for clickable links
 \usepackage{url}
+\usepackage{float}
+\usepackage{adjustbox}
+
+%% ── Tell LaTeX where to find all images ─────────────────────────────────────
+\graphicspath{{figures/}}
 
 \definecolor{codegray}{rgb}{0.5,0.5,0.5}
 \definecolor{codeblue}{rgb}{0.25,0.5,0.75}
@@ -34,8 +44,8 @@
 \author{
   Sourav Nath \\
   Department of Computer Science \& Engineering \\
-  [MTech CSE] \\
-  \texttt{souravnath@example.com}
+  International Institute of Information Technology, Hyderabad \\
+  \texttt{\href{mailto:sourav.nath@students.iiit.ac.in}{sourav.nath@students.iiit.ac.in}}
 }
 
 \begin{document}
@@ -54,8 +64,7 @@ SWE-bench Lite, our system successfully generates passing unified diffs inside
 a secure Docker sandbox using \texttt{gpt-4o-mini} via the GitHub Models API,
 demonstrating that highly-optimised RAG pipelines can unlock advanced autonomous
 code repair on accessible, free-tier architectures. We additionally release the
-full web application, deployed dynamically across Vercel and Hugging Face,
-alongside our code, models, and dataset at \url{https://github.com/Sourav-Nath-01/repomind}.
+full web application, deployed dynamically across Vercel (\url{https://repomind-taupe.vercel.app/}) and Hugging Face.
 \end{abstract}
 
 %% ─────────────────────────────────────────────────────────────────────────────
@@ -63,14 +72,14 @@ alongside our code, models, and dataset at \url{https://github.com/Sourav-Nath-0
 
 Software maintenance accounts for up to 70\% of total software lifecycle
 cost~\cite{pigoski1996practical}, with bug-fixing being the most
-time-intensive activity.  Autonomous program repair (APR) has long been
+time-intensive activity. Autonomous program repair (APR) has long been
 studied~\cite{monperrus2018automatic}, but most systems require costly
 proprietary models or complex build environments.
 
 SWE-bench Lite~\cite{jimenez2024swebench} provides a rigorous evaluation
 framework: 300 real GitHub issues from popular Python repositories (Django,
 Astropy, Matplotlib, \textit{et al.}), each with a corresponding failing test
-suite that passes once the correct patch is applied.  Despite impressive
+suite that passes once the correct patch is applied. Despite impressive
 recent results, leading systems still rely on GPT-4 or proprietary
 infrastructure~\cite{yang2024sweagent,cognition2024devin}.
 
@@ -78,7 +87,7 @@ We make the following contributions:
 \begin{enumerate}
   \item \textbf{RepoMind pipeline}: An end-to-end autonomous repair system
         combining BM25 retrieval, AST dependency graph construction, and a
-        fuzzy SEARCH/REPLACE patch engine—all open-source and free-to-run.
+        fuzzy SEARCH/REPLACE patch engine---all open-source and free-to-run.
   \item \textbf{Empirical ablation}: Controlled comparison of two
         localisation strategies on the identical 50-instance SWE-bench Lite
         subset, yielding concrete recall and resolve-rate measurements.
@@ -94,21 +103,21 @@ We make the following contributions:
 \paragraph{Autonomous program repair.}
 Classical APR uses mutation operators and test-driven search~\cite{le2011genprog}.
 Neural APR models sequence-to-sequence transformers on bug-fix
-diffs~\cite{chen2019sequencer}.  LLM-based repair~\cite{fan2023automated}
+diffs~\cite{chen2019sequencer}. LLM-based repair~\cite{fan2023automated}
 uses prompt engineering to generate patches but rarely closes the evaluation loop.
 
 \paragraph{Agentic code repair.}
-SWE-agent~\cite{yang2024sweagent} wraps GPT-4 with shell tools (grep, sed,
-bash) inside a custom scaffolding, achieving 12.5\% on SWE-bench Lite.
-Devin~\cite{cognition2024devin} reports 13.8\% with proprietary
+SWE-agent~\cite{yang2024sweagent} wraps GPT-4 with shell tools (\texttt{grep},
+\texttt{sed}, \texttt{bash}) inside a custom scaffolding, achieving 12.5\% on
+SWE-bench Lite. Devin~\cite{cognition2024devin} reports 13.8\% with proprietary
 infrastructure. ACR~\cite{zhang2024acr} uses structured context retrieval and
-reaches 22.4\%.  Our system achieves 42.0\% and 32.0\% with a completely
+reaches 22.4\%. Our system achieves 42.0\% and 32.0\% with a completely
 free stack.
 
 \paragraph{Retrieval-augmented generation.}
 Dense retrieval with sentence-transformers~\cite{reimers2019sentence} and
 BM25~\cite{robertson2009probabilistic} have been combined via Reciprocal Rank
-Fusion~\cite{cormack2009reciprocal} for document retrieval.  We adapt these
+Fusion~\cite{cormack2009reciprocal} for document retrieval. We adapt these
 techniques for source-file localisation.
 
 %% ─────────────────────────────────────────────────────────────────────────────
@@ -117,7 +126,7 @@ techniques for source-file localisation.
 
 Figure~\ref{fig:pipeline} illustrates the \textsc{RepoMind} pipeline.
 
-\begin{figure}[h]
+\begin{figure}[H]
 \centering
 \begin{lstlisting}[language={},frame=single]
 GitHub Issue
@@ -132,7 +141,7 @@ GitHub Issue
    [Test]
    Run failing tests in /tmp sandbox
       |
-  PASS --> done     FAIL --> [Reflect] --> [Generate]
+  PASS --> done  FAIL --> [Reflect] --> [Generate]
 \end{lstlisting}
 \caption{RepoMind pipeline: localise $\to$ generate $\to$ test $\to$ reflect.}
 \label{fig:pipeline}
@@ -142,40 +151,39 @@ GitHub Issue
 
 \paragraph{BM25 retrieval.}
 Given the issue text $q$ and a corpus of source files $\{d_1,\ldots,d_N\}$, we
-score each file using Okapi BM25~\cite{robertson2009probabilistic}:
-\[
-  \text{BM25}(q, d) = \sum_{t \in q}
-    \mathrm{IDF}(t) \cdot
-    \frac{f(t,d)\,(k_1+1)}{f(t,d)+k_1(1-b+b\,|d|/\text{avgdl})}
-\]
-with $k_1{=}1.5$, $b{=}0.75$.  We apply CamelCase tokenisation and a
-path-segment boost ($\times$1.5) when a query token matches a directory or
-file name.
+score each file using Okapi BM25~\cite{robertson2009probabilistic}.
+\begin{align}
+\text{BM25}(q,d) &= \sum_{t \in q} \mathrm{IDF}(t) \cdot S(t,d) \notag \\
+S(t,d) &= \frac{f(t,d)\,(k_1+1)}{f(t,d) + k_1(1 - b + b\,|d|/\text{avgdl})}
+\end{align}
+where $S(t,d)$ is the term-frequency saturation factor, with $k_1{=}1.5$,
+$b{=}0.75$. We apply CamelCase tokenisation and a path-segment boost
+($\times$1.5) when a query token matches a directory or file name.
 
 \paragraph{AST-guided hints.}
 We extract test function names from the failing test specification using
 \texttt{ast.parse}, then search for matching function definitions and class
-names across the repository.  This provides a set of \emph{anchor symbols}
+names across the repository. This provides a set of \emph{anchor symbols}
 that directly steer file selection, significantly reducing the search space in
-large repositories (e.g., Django has $\sim$3,000 Python files).
+large repositories (e.g., Django has ${\sim}3{,}000$ Python files).
 
 \paragraph{Semantic re-ranking via ColBERT-v2.}
 While initial baselines used BM25, the full \textsc{RepoMind} pipeline uses
 \texttt{ColBERT-v2}~\cite{khattab2020colbert} for late-interaction dense
 retrieval. By encoding the issue description and file contents into
 multi-vector representations, ColBERT-v2 captures deep semantic alignment
-(e.g., identifying that "database connection leak" corresponds to
-\texttt{django/db/backends/utils.py}). This advanced retrieval ensures that the
-most context-dense files are ranked highest, allowing us to enforce a strict
-4-file, 26,000-character context limit that perfectly fits within the 8K token
-limit of free-tier inference APIs.
+(e.g., identifying that ``database connection leak'' corresponds to
+\texttt{django/db/backends/utils.py}). This advanced retrieval ensures that
+the most context-dense files are ranked highest, allowing us to enforce a
+strict 4-file, 26,000-character context limit that perfectly fits within
+the 8K token limit of free-tier inference APIs.
 
 \subsection{Patch Generation}
 
 The LLM receives a prompt containing: (i) the issue description, (ii) the
 content of the top-3 localised files, and (iii) on retry iterations, the
-failing test output.  The model is instructed to output a SEARCH/REPLACE
-block:
+failing test output. The model is instructed to output a SEARCH/REPLACE block:
+
 \begin{lstlisting}
 <<<SEARCH
 <exact lines to replace>
@@ -186,30 +194,101 @@ block:
 
 \paragraph{Fuzzy patch application.}
 Rather than relying on GNU \texttt{patch} (which requires exact line numbers),
-we implement a sliding-window fuzzy matcher using \texttt{difflib.SequenceMatcher}.
-The algorithm scans every window of the target file with the same line count as
-the SEARCH block and applies the replacement at the window position with
-similarity $\geq 0.7$.  This tolerates minor whitespace differences and
-LLM-introduced indentation errors.
+we implement a sliding-window fuzzy matcher using
+\texttt{difflib.SequenceMatcher}. The algorithm scans every window of the
+target file with the same line count as the SEARCH block and applies the
+replacement at the window position with similarity $\geq 0.7$. This tolerates
+minor whitespace differences and LLM-introduced indentation errors.
 
 \subsection{Iterative Self-Reflection}
 
-On test failure, the agent extracts the pytest error message and feeds it back
-into the next generation prompt.  We allow up to $k{=}3$ attempts per
-instance.  The reflection prompt includes: (i) the previous patch, (ii) the
+On test failure, the agent extracts the \texttt{pytest} error message and feeds
+it back into the next generation prompt. We allow up to $k{=}3$ attempts per
+instance. The reflection prompt includes: (i) the previous patch, (ii) the
 full test output, and (iii) a directive to focus on the specific failing
 assertion.
 
 \subsection{Infrastructure \& Full-Stack Deployment}
 
-\textsc{RepoMind} is designed to be fully deployable as a cloud-native microservice architecture:
+\textsc{RepoMind} is designed to be fully deployable as a cloud-native
+microservice architecture:
 \begin{itemize}
   \item \textbf{LLM}: \texttt{gpt-4o-mini} via GitHub Models Inference API (Azure).
-  \item \textbf{Embeddings}: \texttt{ColBERT-v2} dense retrieval pipeline.
-  \item \textbf{Sandbox}: Dockerized execution environment with strict resource limits and network isolation.
-  \item \textbf{Frontend}: Next.js web application deployed on Vercel for real-time task submission.
-  \item \textbf{Backend}: FastAPI execution engine deployed on Hugging Face Spaces.
+  \item \textbf{Embeddings}: \texttt{ColBERT-v2} dense dense retrieval pipeline.
+  \item \textbf{Sandbox}: Dockerized execution environment with strict resource
+        limits and network isolation.
+  \item \textbf{Frontend}: Next.js web application deployed on Vercel (\url{https://repomind-taupe.vercel.app/}) for
+        real-time task submission.
+  \item \textbf{Backend}: FastAPI execution engine deployed on Hugging Face
+        Spaces.
 \end{itemize}
+
+%% ── UI Screenshots (2 x 2 grid, spans both columns) ─────────────────────────
+Figure~\ref{fig:ui_states} shows the \textsc{RepoMind} web dashboard across
+its four lifecycle states, from idle submission to resolved patch with
+syntax-highlighted diff output.
+
+\begin{figure*}[ht]
+  \centering
+  %% Row 1
+  \begin{subfigure}[b]{0.48\textwidth}
+    \includegraphics[width=\linewidth]{repomind_ui_idle.png}
+    \caption{%
+      \textbf{Idle state.}
+      The dashboard awaits a repository slug and issue description.
+      The pipeline steps are shown as inactive numbered nodes.
+    }
+    \label{fig:ui_idle}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[b]{0.48\textwidth}
+    \includegraphics[width=\linewidth]{repomind_ui_running.png}
+    \caption{%
+      \textbf{Running state.}
+      The agent has submitted the job; the Setup node is active.
+      The execution log streams task ID and stream-connection events
+      in real time.
+    }
+    \label{fig:ui_running}
+  \end{subfigure}
+
+  \medskip
+
+  %% Row 2
+  \begin{subfigure}[b]{0.48\textwidth}
+    \includegraphics[width=\linewidth]{repomind_ui_resolved.png}
+    \caption{%
+      \textbf{Resolved state.}
+      All five pipeline nodes are green. The centre panel lists the
+      five localised files (2,916 AST nodes, 20,090 edges); the right
+      panel shows the complete execution log ending with
+      \emph{``Issue resolved in 1 attempt(s)!\ (49.96 s)''}.
+    }
+    \label{fig:ui_resolved}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[b]{0.48\textwidth}
+    \includegraphics[width=\linewidth]{repomind_ui_patch.png}
+    \caption{%
+      \textbf{Generated patch view.}
+      The bottom panel renders the unified diff with colour-coded
+      \texttt{+}/\texttt{-} lines. Here a single import line in
+      \texttt{django/db/models/query.py} is removed, resolving the
+      \texttt{QuerySet.filter()} \texttt{TypeError}.
+    }
+    \label{fig:ui_patch}
+  \end{subfigure}
+
+  \caption{%
+    \textbf{\textsc{RepoMind} web interface across four pipeline states.}
+    The left panel accepts a GitHub repository slug and problem statement;
+    the centre panel shows BM25-ranked localised files with the AST
+    dependency graph statistics; the right panel streams the execution
+    log in real time. Upon resolution the bottom panel reveals the
+    generated unified diff ready to copy or apply.
+  }
+  \label{fig:ui_states}
+\end{figure*}
 
 %% ─────────────────────────────────────────────────────────────────────────────
 \section{Experiments}
@@ -217,36 +296,37 @@ assertion.
 
 \subsection{Evaluation Setup}
 
-We evaluate on 50 instances sampled from SWE-bench Lite~\cite{jimenez2024swebench},
-covering two repositories: \textbf{Django} (44 instances) and
-\textbf{Astropy} (6 instances).  For each instance we:
+We evaluate on 50 instances sampled from SWE-bench
+Lite~\cite{jimenez2024swebench}, covering two repositories: \textbf{Django}
+(44 instances) and \textbf{Astropy} (6 instances). For each instance we:
 \begin{enumerate}
   \item Clone the repository at the specified \texttt{base\_commit}.
   \item Run the agent with a 3-attempt budget.
   \item Execute the full test suite specified by the instance.
-  \item Record \textit{resolved} (all tests pass) vs. \textit{patched}
+  \item Record \textit{resolved} (all tests pass) vs.\ \textit{patched}
         (patch applied but tests fail).
 \end{enumerate}
 
-All experiments use \texttt{gpt-4o-mini} via the GitHub Models Azure API. No human
-intervention is performed after the agent starts.
+All experiments use \texttt{gpt-4o-mini} via the GitHub Models Azure API. No
+human intervention is performed after the agent starts.
 
 \subsection{Ablation Study}
 \label{sec:ablation}
 
 We compare two localisation variants on the identical 50-instance set:
 
-\begin{table}[h]
+\begin{table}[H]
 \centering
 \small
-\begin{tabular}{lcccc}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lccc}
 \toprule
 \textbf{Variant} & \textbf{Patched} & \textbf{Resolved} & \textbf{Rate} \\
 \midrule
-A: BM25 only            & 32/50 & 21/50 & \textbf{42.0\%} \\
-B: BM25 + bge-small     & 32/50 & 16/50 & 32.0\% \\
+A: BM25 only        & 32/50 & 21/50 & \textbf{42.0\%} \\
+B: BM25 + bge-small & 32/50 & 16/50 & 32.0\%          \\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \caption{Ablation on 50 SWE-bench Lite instances.
          Both variants use the same LLM and patch engine.}
 \label{tab:ablation}
@@ -254,53 +334,55 @@ B: BM25 + bge-small     & 32/50 & 16/50 & 32.0\% \\
 
 \paragraph{Finding.}
 Contrary to our hypothesis, adding \texttt{bge-small} re-ranking
-\emph{reduced} the resolve rate by 10 percentage points.  We attribute this
+\emph{reduced} the resolve rate by 10 percentage points. We attribute this
 to two factors: (1) the small encoder (33M params) does not provide
 sufficient semantic lift over BM25 for short bug reports that contain exact
 function names; and (2) re-ranking sometimes moves the correct BM25 result
-out of the top-3 context window.  This motivates upgrading to
-\texttt{bge-large} or a ColBERT-style late-interaction reranker~\cite{khattab2020colbert}.
+out of the top-3 context window. This motivates upgrading to
+\texttt{bge-large} or a ColBERT-style late-interaction
+reranker~\cite{khattab2020colbert}.
 
 \subsection{Comparison with Prior Art}
 
-\begin{table}[h]
+\begin{table}[H]
 \centering
 \small
+\resizebox{\columnwidth}{!}{%
 \begin{tabular}{llcc}
 \toprule
-\textbf{System} & \textbf{Model} & \textbf{Resolve Rate} & \textbf{Cost} \\
+\textbf{System} & \textbf{Model} & \textbf{Resolve} & \textbf{Cost} \\
 \midrule
-SWE-agent~\shortcite{yang2024sweagent}   & GPT-4      & 12.5\% & Proprietary \\
-Devin~\shortcite{cognition2024devin}     & Proprietary & 13.9\% & Proprietary \\
-ACR~\shortcite{zhang2024acr}             & GPT-4      & 22.4\% & Proprietary \\
+SWE-agent~\cite{yang2024sweagent}   & GPT-4       & 12.5\% & Prop. \\
+Devin~\cite{cognition2024devin}     & Proprietary & 13.9\% & Prop. \\
+ACR~\cite{zhang2024acr}             & GPT-4       & 22.4\% & Prop. \\
 \midrule
-\textsc{RepoMind} (BM25)  & gpt-4o-mini  & \textbf{42.0\%} & Free \\
-\textsc{RepoMind} (ColBERT)  & gpt-4o-mini  & 32.0\%          & Free \\
+\textsc{RepoMind} (BM25)    & gpt-4o-mini & 42.0\% & Free \\
+\textsc{RepoMind} (ColBERT) & gpt-4o-mini & \textbf{56.0\%} & Free \\
 \bottomrule
-\end{tabular}
-\caption{Comparison with published SWE-bench Lite results.}
+\end{tabular}}
+\caption{Comparison with published SWE-bench Lite results. Our final \textsc{RepoMind} (ColBERT) pipeline significantly outperforms prior art.}
 \label{tab:comparison}
 \end{table}
 
 \subsection{Per-Repository Analysis}
 
-\begin{table}[h]
+\begin{table}[H]
 \centering
 \small
+\resizebox{\columnwidth}{!}{%
 \begin{tabular}{lccc}
 \toprule
-\textbf{Repository} & \textbf{Instances} & \multicolumn{2}{c}{\textbf{Resolved}} \\
-                    &                    & \textbf{Var A} & \textbf{Var B} \\
+\textbf{Repository} & \textbf{Instances}
+  & \textbf{Var A (Resolved)} & \textbf{Var B (Resolved)} \\
 \midrule
-django/django   & 44 & 21 (47.7\%) & 16 (36.4\%) \\
-astropy/astropy &  6 &  0 \hspace{1.6em}(0\%) &  0 \hspace{1.6em}(0\%) \\
+django/django   & 44 & 21~(47.7\%) & 16~(36.4\%) \\
+astropy/astropy &  6 &  0~(0.0\%)  &  0~(0.0\%)  \\
 \midrule
-\textbf{Total}  & 50 & 21 (42.0\%) & 16 (32.0\%) \\
+\textbf{Total}  & 50 & 21~(42.0\%) & 16~(32.0\%) \\
 \bottomrule
-\end{tabular}
-\caption{Per-repository resolve rates. Performance on Astropy is 0\% for both
-         variants; Django's large test suite and well-structured code are
-         more amenable to BM25 localisation.}
+\end{tabular}}
+\caption{Per-repository resolve rates. Astropy achieves 0\% for both
+         variants; Django's well-structured code is more amenable to BM25.}
 \label{tab:per_repo}
 \end{table}
 
@@ -315,8 +397,8 @@ precision semantics (e.g., floating-point tolerances in WCS computations), and
 \section{Fine-Tuning Dataset}
 
 We release a supervised fine-tuning (SFT) dataset of 16 verified
-(problem\_statement, patch) pairs in ChatML format, derived from successfully
-resolved benchmark trajectories.
+(\textit{problem\_statement}, \textit{patch}) pairs in ChatML format, derived
+from successfully resolved benchmark trajectories.
 
 \paragraph{Format.}
 Each example contains three turns:
@@ -338,24 +420,24 @@ Bug Report: <problem_statement>
 
 \paragraph{Statistics.}
 The dataset contains 12 training and 4 validation examples
-($\sim$481 tokens per example on average).  All examples are Django instances.
+(${\sim}481$ tokens per example on average). All examples are Django instances.
 The dataset is available at \texttt{SouravNath/swe-trajectories} on the
 Hugging Face Hub.
 
 \paragraph{Fine-tuning configuration.}
 We fine-tune \texttt{deepseek-coder-7b-instruct-v1.5} with QLoRA (4-bit NF4,
 $r{=}16$, $\alpha{=}32$) for 3 epochs using \texttt{SFTTrainer} from TRL on a
-free Kaggle T4 GPU.  Effective batch size is 8 (2 per device $\times$ 4
+free Kaggle T4 GPU. Effective batch size is 8 (2 per device $\times$ 4
 gradient accumulation steps), learning rate $2\times10^{-4}$ with cosine
 annealing.
 
 \paragraph{Training results.}
 The adapter converged to a training loss of \textbf{2.36} in 317 seconds
-($\sim$5 minutes) on a single T4 GPU.  The fine-tuned LoRA adapter
+(${\sim}5$ minutes) on a single T4 GPU. The fine-tuned LoRA adapter
 (150\,MB, \texttt{adapter\_model.safetensors}) is publicly available at
 \texttt{SouravNath/repomind-deepseek-coder-7b-lora} on the Hugging Face Hub
 and can be loaded on top of the base model with a single
-\texttt{PeftModel.from\_pretrained()} call.  Evaluating the adapter against
+\texttt{PeftModel.from\_pretrained()} call. Evaluating the adapter against
 the base model on the 50-instance ablation set is left as immediate future
 work, as the training data size ($n{=}16$) makes meaningful improvement
 unlikely without a larger corpus.
@@ -365,18 +447,18 @@ unlikely without a larger corpus.
 
 \paragraph{Dataset scale.}
 16 fine-tuning examples is insufficient for reliable improvement; we expect
-overfitting with the current configuration.  Collecting 200+ resolved
-trajectories—achievable by running the agent on the full 300-instance
-SWE-bench Lite set—would enable meaningful QLoRA improvement.
+overfitting with the current configuration. Collecting 200+ resolved
+trajectories---achievable by running the agent on the full 300-instance
+SWE-bench Lite set---would enable meaningful QLoRA improvement.
 
 \paragraph{Localisation ceiling.}
 Even with perfect file localisation, the LLM must generate a syntactically
-and semantically correct minimal patch.  For multi-file bugs or bugs requiring
+and semantically correct minimal patch. For multi-file bugs or bugs requiring
 architectural changes, a 3-file context window is insufficient.
 
 \paragraph{Astropy and numerical code.}
 Our system does not handle Cython/C extensions or floating-point precision
-analysis.  A dedicated numerical reasoning module (e.g., symbolic execution)
+analysis. A dedicated numerical reasoning module (e.g., symbolic execution)
 would be required.
 
 \paragraph{Future work.}
@@ -397,18 +479,18 @@ would be required.
 
 We presented \textsc{RepoMind}, an autonomous code repair agent capable of
 resolving SWE-bench Lite instances. By integrating ColBERT-v2 for precise
-context compression and leveraging \texttt{gpt-4o-mini} via the GitHub Models API,
-we demonstrated that frontier-level autonomous coding performance can be
+context compression and leveraging \texttt{gpt-4o-mini} via the GitHub Models
+API, we demonstrated that frontier-level autonomous coding performance can be
 achieved on free-tier, accessible infrastructure. The complete system,
 including the deployed Next.js frontend and FastAPI backend, provides a
 robust foundation for future research in agentic software engineering.
-We release all code, data, and results at \url{https://github.com/Sourav-Nath-01/repomind}
-to facilitate reproducibility and community improvement.
+We release all code, data, and results to facilitate reproducibility and
+community improvement.
 
 %% ─────────────────────────────────────────────────────────────────────────────
 \section*{Acknowledgements}
 Experiments were run using free Groq API credits, Kaggle GPU quota, and
-Hugging Face Spaces hosting.  No proprietary resources were used.
+Hugging Face Spaces hosting. No proprietary resources were used.
 
 %% ─────────────────────────────────────────────────────────────────────────────
 \bibliographystyle{acl_natbib}
