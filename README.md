@@ -138,7 +138,4 @@ python -m experiments.benchmark --variant with_reflection --max-instances 5
 - [ColBERT-v2](https://arxiv.org/abs/2112.01488) — Santhanam et al. 2021
 - [LangGraph](https://github.com/langchain-ai/langgraph)
 
----
 
-## 📄 License
-MIT

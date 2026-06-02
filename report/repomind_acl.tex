@@ -54,7 +54,8 @@ SWE-bench Lite, our system successfully generates passing unified diffs inside
 a secure Docker sandbox using \texttt{gpt-4o-mini} via the GitHub Models API,
 demonstrating that highly-optimised RAG pipelines can unlock advanced autonomous
 code repair on accessible, free-tier architectures. We additionally release the
-full web application, deployed dynamically across Vercel and Hugging Face.
+full web application, deployed dynamically across Vercel and Hugging Face,
+alongside our code, models, and dataset at \url{https://github.com/Sourav-Nath-01/repomind}.
 \end{abstract}
 
 %% ─────────────────────────────────────────────────────────────────────────────
@@ -380,8 +381,6 @@ would be required.
 
 \paragraph{Future work.}
 \begin{itemize}
-  \item \textbf{[Done]} Replace \texttt{bge-small} with \texttt{ColBERT-v2}~\cite{khattab2020colbert}
-        for late-interaction reranking (committed to \texttt{localisation/colbert\_ranker.py}).
   \item Extend the fine-tuning dataset to 200+ examples by running the agent
         on the full 300-instance SWE-bench Lite set and measure post-fine-tune
         resolve rate vs.\ base model.
@@ -403,8 +402,8 @@ we demonstrated that frontier-level autonomous coding performance can be
 achieved on free-tier, accessible infrastructure. The complete system,
 including the deployed Next.js frontend and FastAPI backend, provides a
 robust foundation for future research in agentic software engineering.
-We release all code, data, and results to facilitate reproducibility and
-community improvement.
+We release all code, data, and results at \url{https://github.com/Sourav-Nath-01/repomind}
+to facilitate reproducibility and community improvement.
 
 %% ─────────────────────────────────────────────────────────────────────────────
 \section*{Acknowledgements}
