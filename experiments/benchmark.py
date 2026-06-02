@@ -137,31 +137,103 @@ class BenchmarkRunner:
 
     def _run_instance(self, instance: dict, agent) -> dict:
         """Run one instance and return a result dict."""
-        instance_id = instance["instance_id"]
-
+        import json as _json
+        import shutil
         import tempfile
         from pathlib import Path as PL
+        from sandbox.executor import SandboxExecutor
 
+        instance_id = instance["instance_id"]
         workspace = PL(tempfile.mkdtemp(prefix=f"swe_{instance_id[:8]}_"))
 
+        # SWE-bench stores FAIL_TO_PASS / PASS_TO_PASS as JSON strings — parse them
+        def _to_list(val):
+            if isinstance(val, list):
+                return val
+            if isinstance(val, str):
+                try:
+                    return _json.loads(val)
+                except Exception:
+                    return [v.strip() for v in val.split(",") if v.strip()]
+            return []
+
+        fail_to_pass = _to_list(instance.get("FAIL_TO_PASS", []))
+        pass_to_pass = _to_list(instance.get("PASS_TO_PASS", []))
+        repo = instance["repo"]
+        base_commit = instance.get("base_commit", "HEAD")
+
+        # ── Step 1: Clone repo at base commit ─────────────────────────────────
+        sandbox = SandboxExecutor()
+        clone_result = sandbox.clone_repo(repo, base_commit, workspace)
+        if not clone_result.success:
+            logger.error("Clone failed for %s: %s", instance_id, clone_result.stderr[:300])
+            return self._error_result(instance, f"clone_failed: {clone_result.stderr[:200]}")
+
+        # ── Step 2: Run agent to generate patch ────────────────────────────────
         state = agent.run(
             instance_id=instance_id,
-            repo=instance["repo"],
+            repo=repo,
             problem_statement=instance["problem_statement"],
-            base_commit=instance.get("base_commit", "HEAD"),
-            fail_to_pass=instance.get("FAIL_TO_PASS", []),
-            pass_to_pass=instance.get("PASS_TO_PASS", []),
+            base_commit=base_commit,
+            fail_to_pass=fail_to_pass,
+            pass_to_pass=pass_to_pass,
             workspace_dir=workspace,
         )
 
+        # ── Step 3: Apply best patch and run tests ────────────────────────────
+        resolved = False
+        failure_category = state.last_failure_category
+        if state.last_patch and state.last_patch.strip():
+            if not workspace.exists():
+                # Agent loop may have cleaned up — re-clone for final apply
+                logger.warning("[%s] Workspace gone, re-cloning for final apply", instance_id)
+                clone_result2 = sandbox.clone_repo(repo, base_commit, workspace)
+                if not clone_result2.success:
+                    failure_category = "patch_apply_failed"
+                    logger.error("[%s] Re-clone failed: %s", instance_id, clone_result2.stderr[:200])
+                    state.last_patch = ""
+
+            if workspace.exists() and state.last_patch:
+                # Reset workspace to exact base_commit before applying final patch
+                import subprocess as _sp
+                _sp.run(["git", "reset", "--hard", base_commit],
+                        capture_output=True, cwd=str(workspace))
+                _sp.run(["git", "clean", "-fd"],
+                        capture_output=True, cwd=str(workspace))
+
+                # Apply the evaluating test patch (adds the FAIL_TO_PASS tests)
+                test_apply = sandbox.apply_patch(instance.get("test_patch", ""), workspace)
+                if not test_apply.success:
+                    logger.warning("[%s] Test patch failed to apply: %s", instance_id, test_apply.stderr[:200])
+
+                apply_result = sandbox.apply_patch(state.last_patch, workspace)
+                if apply_result.success:
+                    all_test_ids = fail_to_pass + pass_to_pass
+                    test_result = sandbox.run_tests(workspace, all_test_ids)
+                    resolved, _, _ = test_result.check_tests(fail_to_pass, pass_to_pass)
+                    failure_category = "resolved" if resolved else "test_failure"
+                    logger.info(
+                        "[%s] Docker tests done: resolved=%s passed=%d failed=%d errors=%d",
+                        instance_id, resolved, len(test_result.passed), len(test_result.failed), len(test_result.errors)
+                    )
+                else:
+                    failure_category = "patch_apply_failed"
+                    logger.warning("[%s] Patch apply failed: %s", instance_id, apply_result.stderr[:200])
+
+        # Cleanup workspace to save disk space
+        try:
+            shutil.rmtree(workspace, ignore_errors=True)
+        except Exception:
+            pass
+
         return {
             "instance_id": instance_id,
-            "repo": instance["repo"],
-            "resolved": state.resolved,
+            "repo": repo,
+            "resolved": resolved,
             "attempts": state.current_attempt,
-            "failure_category": state.last_failure_category,
+            "failure_category": failure_category,
             "total_tokens": state.total_tokens,
-            "patch": state.last_patch[:500],   # truncate for storage
+            "patch": state.last_patch[:1000],
             "variant": self.variant,
         }
 
@@ -180,14 +252,17 @@ class BenchmarkRunner:
 
     def _build_agent(self, traj_logger):
         from agent.reflection_agent import ReflectionAgent
+        from configs.settings import settings
 
         use_reflection = self.variant not in ("baseline_gpt4o",)
         max_attempts = 3 if use_reflection else 1
 
-        model = "gpt-4o"
-        if self.variant == "fine_tuned":
-            # Would load fine-tuned model here
-            model = "gpt-4o"  # fallback in absence of fine-tuned weights
+        # Use model from settings (Groq/llama by default, not hardcoded gpt-4o)
+        model = settings.llm_model
+        if self.variant == "fine_tuned" and getattr(settings, "fine_tuned_model", None):
+            model = settings.fine_tuned_model
+
+        logger.info("Agent model: %s (provider: %s)", model, settings.llm_provider)
 
         return ReflectionAgent(
             model=model,
@@ -196,6 +271,7 @@ class BenchmarkRunner:
             localisation_pipeline=self.pipeline if use_reflection else None,
             trajectory_logger=traj_logger,
         )
+
 
 
 # ── Benchmark report ───────────────────────────────────────────────────────────
@@ -307,6 +383,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--variant",        default="with_reflection", choices=list(SystemVariant.__args__))
     p.add_argument("--split",          default="test",   choices=["train", "test", "dev"])
     p.add_argument("--max-instances",  type=int, default=300)
+    p.add_argument("--offset",         type=int, default=0, help="Skip the first N instances")
     p.add_argument("--output-dir",     default="results")
     p.add_argument("--report-only",    action="store_true", help="Only generate ablation table from existing results")
     p.add_argument("--instance-ids",   nargs="*", help="Specific instance IDs to run")
@@ -330,16 +407,21 @@ def main():
         instances = loader.load(split=args.split)
         if args.instance_ids:
             instances = [i for i in instances if i["instance_id"] in args.instance_ids]
+        if args.offset > 0:
+            instances = instances[args.offset:]
         logger.info("Loaded %d SWE-bench instances", len(instances))
     except Exception as e:
         logger.error("Could not load SWE-bench: %s", e)
         return
 
     # Run benchmark
+    from sandbox.executor import SandboxExecutor
     runner = BenchmarkRunner(
         variant=args.variant,
         output_dir=Path(args.output_dir),
+        sandbox=SandboxExecutor(),
         max_instances=args.max_instances,
+        timeout_per_instance=600,
     )
     report = runner.run(instances)
 

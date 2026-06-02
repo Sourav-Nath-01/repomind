@@ -134,16 +134,21 @@ def wait_for_result(task_id: str, timeout: int = MAX_WAIT) -> dict:
                         print(f"    › {log_msg.get('message', '')[:100]}")
                     
     except Exception as e:
-        result["error"] = str(e)[:200]
+        ws_err = str(e)[:200]
+        # Don't store WS error yet — REST polling may succeed
+        print(f"    (WebSocket error: {ws_err[:80]})")
 
     # ── Fallback: poll REST endpoint if WebSocket missed the done event ──────
-    if result["attempts"] == 0 and not result["error"]:
-        print("    (WebSocket incomplete — polling REST fallback...)")
+    # Always poll when attempts==0, even if WebSocket threw (WS errors are common
+    # with long-running HF Space tasks due to keepalive ping timeouts)
+    if result["attempts"] == 0:
+        print("    (Polling REST fallback...)", flush=True)
+        result["error"] = ""   # clear any WS error — REST may succeed
         poll_deadline = time.time() + timeout
         while time.time() < poll_deadline:
-            time.sleep(8)
+            time.sleep(10)
             try:
-                r = httpx.get(f"{API_BASE}/api/task/{result['task_id']}", timeout=15)
+                r = httpx.get(f"{API_BASE}/api/task/{result['task_id']}", timeout=20)
                 if r.status_code == 200:
                     d = r.json()
                     status = d.get("status", "")
@@ -161,6 +166,7 @@ def wait_for_result(task_id: str, timeout: int = MAX_WAIT) -> dict:
                 print(f"    poll error: {pe}")
 
     return result
+
 
 
 def load_swebench_issues(max_issues: int) -> list[dict]:

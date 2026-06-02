@@ -1,0 +1,595 @@
+🔬 SWE-bench Local Evaluation (v2 — repo cache)
+   Input:  results/eval/patches_to_eval.jsonl
+   Output: results/eval/local_eval_results.jsonl
+   Limit:  36 issues
+
+Resuming: 0 done, 36 to go
+
+
+[1/36]
+────────────────────────────────────────────────────────────
+► astropy__astropy-12907
+  Loading SWE-bench instance...
+`trust_remote_code` is not supported anymore.
+Please check that the Hugging Face dataset 'princeton-nlp/SWE-bench_Lite' isn't based on a loading script and remove `trust_remote_code`.
+If the dataset is based on a loading script, please ask the dataset author to remove it and convert it to a standard format like Parquet.
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+  Commit: d16bfe05a7 | F2P: 2 | P2P: 3
+    Cloning astropy/astropy (one-time, ~1-2 min)...
+  Checking out d16bfe05...
+  Applying patch...
+    Patch check stderr: error: corrupt patch at line 15
+
+  Score so far: 0/1 (0%)
+
+
+[2/36]
+────────────────────────────────────────────────────────────
+► astropy__astropy-14182
+  Loading SWE-bench instance...
+`trust_remote_code` is not supported anymore.
+Please check that the Hugging Face dataset 'princeton-nlp/SWE-bench_Lite' isn't based on a loading script and remove `trust_remote_code`.
+If the dataset is based on a loading script, please ask the dataset author to remove it and convert it to a standard format like Parquet.
+  Commit: a5917978be | F2P: 1 | P2P: 3
+  Checking out a5917978...
+  Applying patch...
+    Patch check stderr: error: corrupt patch at line 19
+
+  Score so far: 0/2 (0%)
+
+
+[3/36]
+────────────────────────────────────────────────────────────
+► astropy__astropy-6938
+  Loading SWE-bench instance...
+`trust_remote_code` is not supported anymore.
+Please check that the Hugging Face dataset 'princeton-nlp/SWE-bench_Lite' isn't based on a loading script and remove `trust_remote_code`.
+If the dataset is based on a loading script, please ask the dataset author to remove it and convert it to a standard format like Parquet.
+  Commit: c76af9ed6b | F2P: 2 | P2P: 3
+  Checking out c76af9ed...
+  Applying patch...
+    Patch check stderr: error: corrupt patch at line 7
+
+  Score so far: 0/3 (0%)
+
+
+[4/36]
+────────────────────────────────────────────────────────────
+► astropy__astropy-7746
+  Loading SWE-bench instance...
+`trust_remote_code` is not supported anymore.
+Please check that the Hugging Face dataset 'princeton-nlp/SWE-bench_Lite' isn't based on a loading script and remove `trust_remote_code`.
+If the dataset is based on a loading script, please ask the dataset author to remove it and convert it to a standard format like Parquet.
+  Commit: d5bd3f68bb | F2P: 1 | P2P: 3
+  Checking out d5bd3f68...
+  Applying patch...
+    Patch check stderr: error: corrupt patch at line 14
+
+  Score so far: 0/4 (0%)
+
+
+[5/36]
+────────────────────────────────────────────────────────────
+► django__django-10914
+  Loading SWE-bench instance...
+`trust_remote_code` is not supported anymore.
+Please check that the Hugging Face dataset 'princeton-nlp/SWE-bench_Lite' isn't based on a loading script and remove `trust_remote_code`.
+If the dataset is based on a loading script, please ask the dataset author to remove it and convert it to a standard format like Parquet.
+  Commit: e7fd69d051 | F2P: 1 | P2P: 3
+  Checking out e7fd69d0...
+  Applying patch...
+    Patch check stderr: error: corrupt patch at line 17
+
+  Score so far: 0/5 (0%)
+
+
+[6/36]
+────────────────────────────────────────────────────────────
+► django__django-10924
+  Loading SWE-bench instance...
+`trust_remote_code` is not supported anymore.
+Please check that the Hugging Face dataset 'princeton-nlp/SWE-bench_Lite' isn't based on a loading script and remove `trust_remote_code`.
+If the dataset is based on a loading script, please ask the dataset author to remove it and convert it to a standard format like Parquet.
+  Commit: bceadd2788 | F2P: 1 | P2P: 1
+  Checking out bceadd27...
+  Applying patch...
+    Patch check stderr: error: corrupt patch at line 14
+
+  Score so far: 0/6 (0%)
+
+
+[7/36]
+────────────────────────────────────────────────────────────
+► django__django-11019
+  Loading SWE-bench instance...
+`trust_remote_code` is not supported anymore.
+Please check that the Hugging Face dataset 'princeton-nlp/SWE-bench_Lite' isn't based on a loading script and remove `trust_remote_code`.
+If the dataset is based on a loading script, please ask the dataset author to remove it and convert it to a standard format like Parquet.
+  Commit: 93e892bb64 | F2P: 16 | P2P: 3
+  Checking out 93e892bb...
+  Applying patch...
+    Patch check stderr: error: corrupt patch at line 12
+
+  Score so far: 0/7 (0%)
+
+
+[8/36]
+────────────────────────────────────────────────────────────
+► django__django-11099
+  Loading SWE-bench instance...
+`trust_remote_code` is not supported anymore.
+Please check that the Hugging Face dataset 'princeton-nlp/SWE-bench_Lite' isn't based on a loading script and remove `trust_remote_code`.
+If the dataset is based on a loading script, please ask the dataset author to remove it and convert it to a standard format like Parquet.
+  Commit: d26b242443 | F2P: 3 | P2P: 3
+  Checking out d26b2424...
+  Applying patch...
+    Patch check stderr: error: corrupt patch at line 20
+
+  Score so far: 0/8 (0%)
+
+
+[9/36]
+────────────────────────────────────────────────────────────
+► django__django-11133
+  Loading SWE-bench instance...
+`trust_remote_code` is not supported anymore.
+Please check that the Hugging Face dataset 'princeton-nlp/SWE-bench_Lite' isn't based on a loading script and remove `trust_remote_code`.
+If the dataset is based on a loading script, please ask the dataset author to remove it and convert it to a standard format like Parquet.
+  Commit: 879cc3da62 | F2P: 1 | P2P: 3
+  Checking out 879cc3da...
+  Applying patch...
+    Patch check stderr: error: corrupt patch at line 15
+
+  Score so far: 0/9 (0%)
+
+
+[10/36]
+────────────────────────────────────────────────────────────
+► django__django-11179
+  Loading SWE-bench instance...
+`trust_remote_code` is not supported anymore.
+Please check that the Hugging Face dataset 'princeton-nlp/SWE-bench_Lite' isn't based on a loading script and remove `trust_remote_code`.
+If the dataset is based on a loading script, please ask the dataset author to remove it and convert it to a standard format like Parquet.
+  Commit: 19fc6376ce | F2P: 1 | P2P: 3
+  Checking out 19fc6376...
+  Applying patch...
+    Patch check stderr: error: corrupt patch at line 15
+
+  Score so far: 0/10 (0%)
+
+
+[11/36]
+────────────────────────────────────────────────────────────
+► django__django-11283
+  Loading SWE-bench instance...
+`trust_remote_code` is not supported anymore.
+Please check that the Hugging Face dataset 'princeton-nlp/SWE-bench_Lite' isn't based on a loading script and remove `trust_remote_code`.
+If the dataset is based on a loading script, please ask the dataset author to remove it and convert it to a standard format like Parquet.
+  Commit: 08a4ee0651 | F2P: 1 | P2P: 3
+  Checking out 08a4ee06...
+  Applying patch...
+    Patch check stderr: error: corrupt patch at line 24
+
+  Score so far: 0/11 (0%)
+
+
+[12/36]
+────────────────────────────────────────────────────────────
+► django__django-11422
+  Loading SWE-bench instance...
+`trust_remote_code` is not supported anymore.
+Please check that the Hugging Face dataset 'princeton-nlp/SWE-bench_Lite' isn't based on a loading script and remove `trust_remote_code`.
+If the dataset is based on a loading script, please ask the dataset author to remove it and convert it to a standard format like Parquet.
+  Commit: df46b329e0 | F2P: 1 | P2P: 3
+  Checking out df46b329...
+  Applying patch...
+    Patch check stderr: error: corrupt patch at line 13
+
+  Score so far: 0/12 (0%)
+
+
+[13/36]
+────────────────────────────────────────────────────────────
+► django__django-11564
+  Loading SWE-bench instance...
+`trust_remote_code` is not supported anymore.
+Please check that the Hugging Face dataset 'princeton-nlp/SWE-bench_Lite' isn't based on a loading script and remove `trust_remote_code`.
+If the dataset is based on a loading script, please ask the dataset author to remove it and convert it to a standard format like Parquet.
+  Commit: 580e644f24 | F2P: 2 | P2P: 3
+  Checking out 580e644f...
+  Applying patch...
+    Patch check stderr: error: corrupt patch at line 16
+
+  Score so far: 0/13 (0%)
+
+
+[14/36]
+────────────────────────────────────────────────────────────
+► django__django-11583
+  Loading SWE-bench instance...
+`trust_remote_code` is not supported anymore.
+Please check that the Hugging Face dataset 'princeton-nlp/SWE-bench_Lite' isn't based on a loading script and remove `trust_remote_code`.
+If the dataset is based on a loading script, please ask the dataset author to remove it and convert it to a standard format like Parquet.
+  Commit: 60dc957a82 | F2P: 2 | P2P: 3
+  Checking out 60dc957a...
+  Applying patch...
+    Patch check stderr: error: corrupt patch at line 11
+
+  Score so far: 0/14 (0%)
+
+
+[15/36]
+────────────────────────────────────────────────────────────
+► django__django-11620
+  Loading SWE-bench instance...
+`trust_remote_code` is not supported anymore.
+Please check that the Hugging Face dataset 'princeton-nlp/SWE-bench_Lite' isn't based on a loading script and remove `trust_remote_code`.
+If the dataset is based on a loading script, please ask the dataset author to remove it and convert it to a standard format like Parquet.
+  Commit: 514efa3129 | F2P: 1 | P2P: 3
+  Checking out 514efa31...
+  Applying patch...
+    Patch check stderr: error: corrupt patch at line 21
+
+  Score so far: 0/15 (0%)
+
+
+[16/36]
+────────────────────────────────────────────────────────────
+► django__django-11630
+  Loading SWE-bench instance...
+`trust_remote_code` is not supported anymore.
+Please check that the Hugging Face dataset 'princeton-nlp/SWE-bench_Lite' isn't based on a loading script and remove `trust_remote_code`.
+If the dataset is based on a loading script, please ask the dataset author to remove it and convert it to a standard format like Parquet.
+  Commit: 65e86948b8 | F2P: 2 | P2P: 3
+  Checking out 65e86948...
+  Applying patch...
+    Patch check stderr: error: corrupt patch at line 10
+
+  Score so far: 0/16 (0%)
+
+
+[17/36]
+────────────────────────────────────────────────────────────
+► django__django-11742
+  Loading SWE-bench instance...
+`trust_remote_code` is not supported anymore.
+Please check that the Hugging Face dataset 'princeton-nlp/SWE-bench_Lite' isn't based on a loading script and remove `trust_remote_code`.
+If the dataset is based on a loading script, please ask the dataset author to remove it and convert it to a standard format like Parquet.
+  Commit: fee75d2aed | F2P: 2 | P2P: 3
+  Checking out fee75d2a...
+  Applying patch...
+    Patch check stderr: error: corrupt patch at line 16
+
+  Score so far: 0/17 (0%)
+
+
+[18/36]
+────────────────────────────────────────────────────────────
+► django__django-11815
+  Loading SWE-bench instance...
+`trust_remote_code` is not supported anymore.
+Please check that the Hugging Face dataset 'princeton-nlp/SWE-bench_Lite' isn't based on a loading script and remove `trust_remote_code`.
+If the dataset is based on a loading script, please ask the dataset author to remove it and convert it to a standard format like Parquet.
+  Commit: e02f67ef2d | F2P: 2 | P2P: 3
+  Checking out e02f67ef...
+  Applying patch...
+    Patch check stderr: error: corrupt patch at line 13
+
+  Score so far: 0/18 (0%)
+
+
+[19/36]
+────────────────────────────────────────────────────────────
+► django__django-11848
+  Loading SWE-bench instance...
+`trust_remote_code` is not supported anymore.
+Please check that the Hugging Face dataset 'princeton-nlp/SWE-bench_Lite' isn't based on a loading script and remove `trust_remote_code`.
+If the dataset is based on a loading script, please ask the dataset author to remove it and convert it to a standard format like Parquet.
+  Commit: f0adf3b9b7 | F2P: 2 | P2P: 3
+  Checking out f0adf3b9...
+  Applying patch...
+    Patch check stderr: error: corrupt patch at line 19
+
+  Score so far: 0/19 (0%)
+
+
+[20/36]
+────────────────────────────────────────────────────────────
+► django__django-11910
+  Loading SWE-bench instance...
+`trust_remote_code` is not supported anymore.
+Please check that the Hugging Face dataset 'princeton-nlp/SWE-bench_Lite' isn't based on a loading script and remove `trust_remote_code`.
+If the dataset is based on a loading script, please ask the dataset author to remove it and convert it to a standard format like Parquet.
+  Commit: d232fd76a8 | F2P: 1 | P2P: 3
+  Checking out d232fd76...
+  Applying patch...
+    Patch check stderr: error: corrupt patch at line 11
+
+  Score so far: 0/20 (0%)
+
+
+[21/36]
+────────────────────────────────────────────────────────────
+► django__django-11964
+  Loading SWE-bench instance...
+`trust_remote_code` is not supported anymore.
+Please check that the Hugging Face dataset 'princeton-nlp/SWE-bench_Lite' isn't based on a loading script and remove `trust_remote_code`.
+If the dataset is based on a loading script, please ask the dataset author to remove it and convert it to a standard format like Parquet.
+  Commit: fc2b1cc926 | F2P: 2 | P2P: 3
+  Checking out fc2b1cc9...
+  Applying patch...
+    Patch check stderr: error: patch failed: django/db/models/fields/__init__.py:108
+error: django/db/models/fields/__init__.py: patch does not apply
+
+  Score so far: 0/21 (0%)
+
+
+[22/36]
+────────────────────────────────────────────────────────────
+► django__django-11999
+  Loading SWE-bench instance...
+`trust_remote_code` is not supported anymore.
+Please check that the Hugging Face dataset 'princeton-nlp/SWE-bench_Lite' isn't based on a loading script and remove `trust_remote_code`.
+If the dataset is based on a loading script, please ask the dataset author to remove it and convert it to a standard format like Parquet.
+  Commit: 8463390527 | F2P: 1 | P2P: 3
+  Checking out 84633905...
+  Applying patch...
+    Patch check stderr: error: corrupt patch at line 12
+
+  Score so far: 0/22 (0%)
+
+
+[23/36]
+────────────────────────────────────────────────────────────
+► django__django-12184
+  Loading SWE-bench instance...
+`trust_remote_code` is not supported anymore.
+Please check that the Hugging Face dataset 'princeton-nlp/SWE-bench_Lite' isn't based on a loading script and remove `trust_remote_code`.
+If the dataset is based on a loading script, please ask the dataset author to remove it and convert it to a standard format like Parquet.
+  Commit: 5d674eac87 | F2P: 1 | P2P: 3
+  Checking out 5d674eac...
+  Applying patch...
+    Patch check stderr: error: corrupt patch at line 16
+
+  Score so far: 0/23 (0%)
+
+
+[24/36]
+────────────────────────────────────────────────────────────
+► django__django-12284
+  Loading SWE-bench instance...
+`trust_remote_code` is not supported anymore.
+Please check that the Hugging Face dataset 'princeton-nlp/SWE-bench_Lite' isn't based on a loading script and remove `trust_remote_code`.
+If the dataset is based on a loading script, please ask the dataset author to remove it and convert it to a standard format like Parquet.
+  Commit: c5e373d48c | F2P: 1 | P2P: 3
+  Checking out c5e373d4...
+  Applying patch...
+    Patch check stderr: error: corrupt patch at line 15
+
+  Score so far: 0/24 (0%)
+
+
+[25/36]
+────────────────────────────────────────────────────────────
+► django__django-12286
+  Loading SWE-bench instance...
+`trust_remote_code` is not supported anymore.
+Please check that the Hugging Face dataset 'princeton-nlp/SWE-bench_Lite' isn't based on a loading script and remove `trust_remote_code`.
+If the dataset is based on a loading script, please ask the dataset author to remove it and convert it to a standard format like Parquet.
+  Commit: 979f61abd3 | F2P: 1 | P2P: 3
+  Checking out 979f61ab...
+  Applying patch...
+    Patch check stderr: error: patch failed: django/core/checks/translation.py:53
+error: django/core/checks/translation.py: patch does not apply
+
+  Score so far: 0/25 (0%)
+
+
+[26/36]
+────────────────────────────────────────────────────────────
+► django__django-12308
+  Loading SWE-bench instance...
+`trust_remote_code` is not supported anymore.
+Please check that the Hugging Face dataset 'princeton-nlp/SWE-bench_Lite' isn't based on a loading script and remove `trust_remote_code`.
+If the dataset is based on a loading script, please ask the dataset author to remove it and convert it to a standard format like Parquet.
+  Commit: 2e0f04507b | F2P: 2 | P2P: 3
+  Checking out 2e0f0450...
+  Applying patch...
+    Patch check stderr: error: corrupt patch at line 14
+
+  Score so far: 0/26 (0%)
+
+
+[27/36]
+────────────────────────────────────────────────────────────
+► django__django-12453
+  Loading SWE-bench instance...
+`trust_remote_code` is not supported anymore.
+Please check that the Hugging Face dataset 'princeton-nlp/SWE-bench_Lite' isn't based on a loading script and remove `trust_remote_code`.
+If the dataset is based on a loading script, please ask the dataset author to remove it and convert it to a standard format like Parquet.
+  Commit: b330b918e9 | F2P: 1 | P2P: 3
+  Checking out b330b918...
+  Applying patch...
+    Patch check stderr: error: corrupt patch at line 22
+
+  Score so far: 0/27 (0%)
+
+
+[28/36]
+────────────────────────────────────────────────────────────
+► django__django-12497
+  Loading SWE-bench instance...
+`trust_remote_code` is not supported anymore.
+Please check that the Hugging Face dataset 'princeton-nlp/SWE-bench_Lite' isn't based on a loading script and remove `trust_remote_code`.
+If the dataset is based on a loading script, please ask the dataset author to remove it and convert it to a standard format like Parquet.
+  Commit: a4881f5e5d | F2P: 2 | P2P: 3
+  Checking out a4881f5e...
+  Applying patch...
+    Patch check stderr: error: corrupt patch at line 19
+
+  Score so far: 0/28 (0%)
+
+
+[29/36]
+────────────────────────────────────────────────────────────
+► django__django-12589
+  Loading SWE-bench instance...
+`trust_remote_code` is not supported anymore.
+Please check that the Hugging Face dataset 'princeton-nlp/SWE-bench_Lite' isn't based on a loading script and remove `trust_remote_code`.
+If the dataset is based on a loading script, please ask the dataset author to remove it and convert it to a standard format like Parquet.
+  Commit: 895f28f9cb | F2P: 1 | P2P: 3
+  Checking out 895f28f9...
+  Applying patch...
+    Patch check stderr: error: corrupt patch at line 12
+
+  Score so far: 0/29 (0%)
+
+
+[30/36]
+────────────────────────────────────────────────────────────
+► django__django-12708
+  Loading SWE-bench instance...
+`trust_remote_code` is not supported anymore.
+Please check that the Hugging Face dataset 'princeton-nlp/SWE-bench_Lite' isn't based on a loading script and remove `trust_remote_code`.
+If the dataset is based on a loading script, please ask the dataset author to remove it and convert it to a standard format like Parquet.
+  Commit: 447980e72a | F2P: 1 | P2P: 3
+  Checking out 447980e7...
+  Applying patch...
+    Patch check stderr: error: corrupt patch at line 11
+
+  Score so far: 0/30 (0%)
+
+
+[31/36]
+────────────────────────────────────────────────────────────
+► django__django-12747
+  Loading SWE-bench instance...
+`trust_remote_code` is not supported anymore.
+Please check that the Hugging Face dataset 'princeton-nlp/SWE-bench_Lite' isn't based on a loading script and remove `trust_remote_code`.
+If the dataset is based on a loading script, please ask the dataset author to remove it and convert it to a standard format like Parquet.
+  Commit: c86201b6ed | F2P: 3 | P2P: 3
+  Checking out c86201b6...
+  Applying patch...
+    Patch check stderr: error: corrupt patch at line 19
+
+  Score so far: 0/31 (0%)
+
+
+[32/36]
+────────────────────────────────────────────────────────────
+► django__django-12915
+  Loading SWE-bench instance...
+`trust_remote_code` is not supported anymore.
+Please check that the Hugging Face dataset 'princeton-nlp/SWE-bench_Lite' isn't based on a loading script and remove `trust_remote_code`.
+If the dataset is based on a loading script, please ask the dataset author to remove it and convert it to a standard format like Parquet.
+  Commit: 4652f1f0aa | F2P: 3 | P2P: 3
+  Checking out 4652f1f0...
+  Applying patch...
+    Patch check stderr: error: corrupt patch at line 15
+
+  Score so far: 0/32 (0%)
+
+
+[33/36]
+────────────────────────────────────────────────────────────
+► django__django-13033
+  Loading SWE-bench instance...
+`trust_remote_code` is not supported anymore.
+Please check that the Hugging Face dataset 'princeton-nlp/SWE-bench_Lite' isn't based on a loading script and remove `trust_remote_code`.
+If the dataset is based on a loading script, please ask the dataset author to remove it and convert it to a standard format like Parquet.
+  Commit: a59de6e89e | F2P: 1 | P2P: 3
+  Checking out a59de6e8...
+  Applying patch...
+    Patch check stderr: error: patch failed: django/db/models/sql/query.py:370
+error: django/db/models/sql/query.py: patch does not apply
+
+  Score so far: 0/33 (0%)
+
+
+[34/36]
+────────────────────────────────────────────────────────────
+► django__django-13158
+  Loading SWE-bench instance...
+`trust_remote_code` is not supported anymore.
+Please check that the Hugging Face dataset 'princeton-nlp/SWE-bench_Lite' isn't based on a loading script and remove `trust_remote_code`.
+If the dataset is based on a loading script, please ask the dataset author to remove it and convert it to a standard format like Parquet.
+  Commit: 7af8f41273 | F2P: 1 | P2P: 3
+  Checking out 7af8f412...
+  Applying patch...
+    Patch check stderr: error: corrupt patch at line 11
+
+  Score so far: 0/34 (0%)
+
+
+[35/36]
+────────────────────────────────────────────────────────────
+► django__django-13220
+  Loading SWE-bench instance...
+`trust_remote_code` is not supported anymore.
+Please check that the Hugging Face dataset 'princeton-nlp/SWE-bench_Lite' isn't based on a loading script and remove `trust_remote_code`.
+If the dataset is based on a loading script, please ask the dataset author to remove it and convert it to a standard format like Parquet.
+  Commit: 16218c2060 | F2P: 4 | P2P: 1
+  Checking out 16218c20...
+  Applying patch...
+    Patch check stderr: error: patch fragment without header at line 11: @@ -79,3 +80,54 @@
+
+  Score so far: 0/35 (0%)
+
+
+[36/36]
+────────────────────────────────────────────────────────────
+► django__django-11797
+  Loading SWE-bench instance...
+`trust_remote_code` is not supported anymore.
+Please check that the Hugging Face dataset 'princeton-nlp/SWE-bench_Lite' isn't based on a loading script and remove `trust_remote_code`.
+If the dataset is based on a loading script, please ask the dataset author to remove it and convert it to a standard format like Parquet.
+  Commit: 3346b78a8a | F2P: 1 | P2P: 3
+  Checking out 3346b78a...
+  Applying patch...
+    Patch check stderr: error: corrupt patch at line 13
+
+  Score so far: 0/36 (0%)
+
+
+============================================================
+FINAL RESULTS
+============================================================
+  ❌ astropy__astropy-12907  [patch did not apply]
+  ❌ astropy__astropy-14182  [patch did not apply]
+  ❌ astropy__astropy-6938  [patch did not apply]
+  ❌ astropy__astropy-7746  [patch did not apply]
+  ❌ django__django-10914  [patch did not apply]
+  ❌ django__django-10924  [patch did not apply]
+  ❌ django__django-11019  [patch did not apply]
+  ❌ django__django-11099  [patch did not apply]
+  ❌ django__django-11133  [patch did not apply]
+  ❌ django__django-11179  [patch did not apply]
+  ❌ django__django-11283  [patch did not apply]
+  ❌ django__django-11422  [patch did not apply]
+  ❌ django__django-11564  [patch did not apply]
+  ❌ django__django-11583  [patch did not apply]
+  ❌ django__django-11620  [patch did not apply]
+  ❌ django__django-11630  [patch did not apply]
+  ❌ django__django-11742  [patch did not apply]
+  ❌ django__django-11815  [patch did not apply]
+  ❌ django__django-11848  [patch did not apply]
+  ❌ django__django-11910  [patch did not apply]
+  ❌ django__django-11964  [patch did not apply]
+  ❌ django__django-11999  [patch did not apply]
+  ❌ django__django-12184  [patch did not apply]
+  ❌ django__django-12284  [patch did not apply]
+  ❌ django__django-12286  [patch did not apply]
+  ❌ django__django-12308  [patch did not apply]
+  ❌ django__django-12453  [patch did not apply]
+  ❌ django__django-12497  [patch did not apply]
+  ❌ django__django-12589  [patch did not apply]
+  ❌ django__django-12708  [patch did not apply]
+  ❌ django__django-12747  [patch did not apply]
+  ❌ django__django-12915  [patch did not apply]
+  ❌ django__django-13033  [patch did not apply]
+  ❌ django__django-13158  [patch did not apply]
+  ❌ django__django-13220  [patch did not apply]
+  ❌ django__django-11797  [patch did not apply]
+
+Resolved: 0/36 (0%)
+Saved to: results/eval/local_eval_results.jsonl

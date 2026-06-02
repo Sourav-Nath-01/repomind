@@ -18,11 +18,15 @@ class Settings(BaseSettings):
 
     # ── LLM ─────────────────────────────────────────────────────────────────
     openai_api_key: str = Field(default="", alias="OPENAI_API_KEY")
+    openai_base_url: str = Field(default="", alias="OPENAI_BASE_URL")
     groq_api_key: str = Field(default="", alias="GROQ_API_KEY")
-    llm_provider: str = Field(default="openai", alias="LLM_PROVIDER")  # openai | groq | gemini | ollama
+    gemini_api_key: str = Field(default="", alias="GEMINI_API_KEY")
+    github_token: str = Field(default="", alias="GITHUB_TOKEN")
+    llm_provider: str = Field(default="openai", alias="LLM_PROVIDER")  # openai | groq | gemini | github | ollama
     llm_model: str = Field(default="gpt-4o", alias="LLM_MODEL")
     llm_max_tokens: int = Field(default=4096, alias="LLM_MAX_TOKENS")
     llm_temperature: float = Field(default=0.2, alias="LLM_TEMPERATURE")
+    ollama_base_url: str = Field(default="http://localhost:11434", alias="OLLAMA_BASE_URL")
 
     # ── SWE-bench ────────────────────────────────────────────────────────────
     swebench_dataset: str = Field(

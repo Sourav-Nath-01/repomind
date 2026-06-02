@@ -1,0 +1,143 @@
+🔬 Evaluating 50 existing patches (no API needed)
+   Fuzz factor: 5 | Skip tests: True
+
+Loading SWE-bench metadata...
+Loaded 300 instances
+
+[1/50] astropy__astropy-12907
+  ❌ Patch did not apply | all failed: patch: **** unexpected end of file in patch
+
+[2/50] astropy__astropy-14995
+  ❌ Patch did not apply | all failed: patch: **** unexpected end of file in patch
+
+[3/50] django__django-11001
+  ❌ Patch did not apply | all failed: patch: **** unexpected end of file in patch
+
+[4/50] astropy__astropy-14182
+  ❌ Patch did not apply | all failed: patch: **** unexpected end of file in patch
+
+[5/50] astropy__astropy-14365
+  ❌ Patch did not apply | all failed: patch: **** unexpected end of file in patch
+
+[6/50] astropy__astropy-6938
+  ✅ Patch applied (patch --fuzz=5)
+[7/50] astropy__astropy-7746
+  ✅ Patch applied (patch --fuzz=5)
+[8/50] django__django-10914
+  ❌ Patch did not apply | all failed: patch: **** unexpected end of file in patch
+
+[9/50] django__django-10924
+  ❌ Patch did not apply | all failed: patch: **** unexpected end of file in patch
+
+[10/50] django__django-11019
+  ❌ Patch did not apply | all failed: 
+[11/50] django__django-11039
+  ❌ Patch did not apply | all failed: patch: **** malformed patch at line 13: @@ -28
+
+
+[12/50] django__django-11049
+  ❌ Patch did not apply | all failed: 
+[13/50] django__django-11099
+  ✅ Patch applied (git apply strict)
+[14/50] django__django-11133
+  ❌ Patch did not apply | all failed: 
+[15/50] django__django-11179
+  ❌ Patch did not apply | all failed: patch: **** malformed patch at line 15: To addre
+[16/50] django__django-11283
+  ❌ Patch did not apply | all failed: patch: **** malformed patch at line 23:  
+
+
+[17/50] django__django-11422
+  ✅ Patch applied (patch --fuzz=5)
+[18/50] django__django-11564
+  ✅ Patch applied (patch --fuzz=5)
+[19/50] django__django-11583
+  ❌ Patch did not apply | all failed: 
+[20/50] django__django-11620
+  ❌ Patch did not apply | all failed: patch: **** malformed patch at line 21:         
+[21/50] django__django-11630
+  ✅ Patch applied (git apply strict)
+[22/50] django__django-11742
+  ✅ Patch applied (patch --fuzz=5)
+[23/50] django__django-11815
+  ❌ Patch did not apply | all failed: patch: **** unexpected end of file in patch
+
+[24/50] django__django-11848
+  ❌ Patch did not apply | all failed: patch: **** unexpected end of file in patch
+
+[25/50] django__django-11910
+  ✅ Patch applied (patch --fuzz=5)
+[26/50] django__django-11964
+  ✅ Patch applied (patch --fuzz=5)
+[27/50] django__django-11999
+  ❌ Patch did not apply | all failed: 
+[28/50] django__django-12113
+  ❌ Patch did not apply | all failed: patch: **** unexpected end of file in patch
+
+[29/50] django__django-12125
+  ❌ Patch did not apply | all failed: patch: **** unexpected end of file in patch
+
+[30/50] django__django-12184
+  ❌ Patch did not apply | all failed: patch: **** unexpected end of file in patch
+
+[31/50] django__django-12284
+  ❌ Patch did not apply | all failed: patch: **** unexpected end of file in patch
+
+[32/50] django__django-12286
+  ❌ Patch did not apply | all failed: 
+[33/50] django__django-12308
+  ❌ Patch did not apply | all failed: patch: **** unexpected end of file in patch
+
+[34/50] django__django-12453
+  ❌ Patch did not apply | all failed: patch: **** malformed patch at line 18: -       
+[35/50] django__django-12470
+  ❌ Patch did not apply | all failed: 
+[36/50] django__django-12497
+  ❌ Patch did not apply | all failed: 
+[37/50] django__django-12589
+  ❌ Patch did not apply | all failed: patch: **** malformed patch at line 12: @@ -1949
+[38/50] django__django-12700
+  ❌ Patch did not apply | all failed: patch: **** unexpected end of file in patch
+
+[39/50] django__django-12708
+  ❌ Patch did not apply | all failed: 
+[40/50] django__django-12747
+  ✅ Patch applied (patch --fuzz=5)
+[41/50] django__django-12856
+  ❌ Patch did not apply | all failed: patch: **** unexpected end of file in patch
+
+[42/50] django__django-12915
+  ❌ Patch did not apply | all failed: patch: **** unexpected end of file in patch
+
+[43/50] django__django-12983
+  ❌ Patch did not apply | all failed: patch: **** unexpected end of file in patch
+
+[44/50] django__django-13028
+  ❌ Patch did not apply | all failed: patch: **** unexpected end of file in patch
+
+[45/50] django__django-11905
+  ❌ Patch did not apply | all failed: patch: **** malformed patch at line 16:  
+
+
+[46/50] django__django-12908
+  ✅ Patch applied (patch --fuzz=5)
+[47/50] django__django-13033
+  ✅ Patch applied (patch --fuzz=5)
+[48/50] django__django-13158
+  ✅ Patch applied (patch --fuzz=5)
+[49/50] django__django-13220
+  ✅ Patch applied (patch --fuzz=5)
+[50/50] django__django-11797
+  ❌ Patch did not apply | all failed: patch: **** unexpected end of file in patch
+
+
+=======================================================
+EVALUATION COMPLETE
+=======================================================
+  Total patches:   50
+  Patch applied:   14/50  (28%)
+  Tests passed:    0/50  (0%)
+  Resolve rate:    0/50 = 0.0%
+=======================================================
+
+Saved to: /home/sourav-nath/Desktop/Project1/results/eval/real_eval_results.jsonl

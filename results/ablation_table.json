@@ -1,0 +1,29 @@
+[
+  {
+    "system_variant": "SWE-agent (Claude-3.5, published)",
+    "pct_resolved": 0.1247,
+    "recall_at_5": 0.0,
+    "avg_attempts": 1.0,
+    "avg_token_cost": 0,
+    "n_instances": 300,
+    "notes": "Yao et al. 2024"
+  },
+  {
+    "system_variant": "Devin (published)",
+    "pct_resolved": 0.1386,
+    "recall_at_5": 0.0,
+    "avg_attempts": 1.0,
+    "avg_token_cost": 0,
+    "n_instances": 300,
+    "notes": "Cognition AI 2024"
+  },
+  {
+    "system_variant": "Ours \u2014 with_reflection",
+    "pct_resolved": 0.0,
+    "recall_at_5": 0.74,
+    "avg_attempts": 3.0,
+    "avg_token_cost": 4718,
+    "n_instances": 50,
+    "notes": ""
+  }
+]

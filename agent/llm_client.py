@@ -194,14 +194,14 @@ class GeminiClient(LLMClient):
 class OllamaClient(LLMClient):
     """
     Ollama — run models 100% locally, no API key, no cost, no rate limits.
-    Best model for code: deepseek-coder-v2:16b or deepseek-coder:33b
+    Best model for code: qwen2.5-coder:32b or deepseek-coder:33b
     Install: https://ollama.com
-    Run:     ollama pull deepseek-coder-v2:16b
+    Run:     ollama pull qwen2.5-coder:32b
 
     Required: Ollama server running at localhost:11434
     """
 
-    def __init__(self, model: str = "deepseek-coder-v2:16b", base_url: str = "http://localhost:11434"):
+    def __init__(self, model: str = "qwen2.5-coder:32b", base_url: str = "http://localhost:11434"):
         self._model = model
         self._base_url = base_url
 
@@ -225,7 +225,13 @@ class OllamaClient(LLMClient):
             "options": {"temperature": temperature, "num_predict": max_tokens},
             "stream": False,
         }
-        resp = requests.post(f"{self._base_url}/api/chat", json=payload, timeout=300)
+        # bypass-tunnel-reminder for localtunnel; User-Agent bypasses Cloudflare browser check
+        headers = {
+            "bypass-tunnel-reminder": "true",
+            "Content-Type": "application/json",
+            "User-Agent": "python-requests/2.31.0",
+        }
+        resp = requests.post(f"{self._base_url}/api/chat", json=payload, headers=headers, timeout=300)
         resp.raise_for_status()
         data = resp.json()
         text = data.get("message", {}).get("content", "")
@@ -367,6 +373,63 @@ class OpenAIClient(LLMClient):
         return text, usage
 
 
+# ── Anthropic client (paid, highly recommended) ─────────────────────────────
+
+class AnthropicClient(LLMClient):
+    """Anthropic Claude API via direct REST calls."""
+
+    def __init__(self, model: str = "claude-3-5-sonnet-20240620"):
+        self._model = model
+
+    @property
+    def model_name(self) -> str:
+        return f"anthropic/{self._model}"
+
+    def complete(self, system: str, user: str, max_tokens: int = 4096, temperature: float = 0.2) -> tuple[str, dict]:
+        import httpx
+
+        api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+        if not api_key:
+            raise EnvironmentError("ANTHROPIC_API_KEY not set")
+
+        url = "https://api.anthropic.com/v1/messages"
+        headers = {
+            "x-api-key": api_key,
+            "anthropic-version": "2023-06-01",
+            "content-type": "application/json",
+        }
+        payload = {
+            "model": self._model,
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+            "system": system,
+            "messages": [{"role": "user", "content": user}],
+        }
+
+        start = time.monotonic()
+        try:
+            with httpx.Client(timeout=180.0) as http:
+                resp = http.post(url, json=payload, headers=headers)
+                resp.raise_for_status()
+                data = resp.json()
+
+            text = data["content"][0]["text"]
+            usage_meta = data.get("usage", {})
+            
+            prompt_tokens = usage_meta.get("input_tokens", 0)
+            comp_tokens = usage_meta.get("output_tokens", 0)
+            usage = {
+                "prompt_tokens": prompt_tokens,
+                "completion_tokens": comp_tokens,
+                "total_tokens": prompt_tokens + comp_tokens,
+            }
+            logger.info("Anthropic %s: %.1fs | %d tokens", self._model, time.monotonic() - start, usage["total_tokens"])
+            return text, usage
+        except Exception as e:
+            logger.warning("Anthropic error: %s", e)
+            raise
+
+
 # ── Auto-detect factory ────────────────────────────────────────────────────────
 
 def get_llm_client(provider: Optional[str] = None, model: Optional[str] = None) -> LLMClient:
@@ -399,23 +462,28 @@ def get_llm_client(provider: Optional[str] = None, model: Optional[str] = None) 
         elif os.environ.get("OPENAI_API_KEY"):
             provider = "openai"
             logger.info("Auto-selected provider: OpenAI (OPENAI_API_KEY found, note: paid)")
+        elif os.environ.get("ANTHROPIC_API_KEY"):
+            provider = "anthropic"
+            logger.info("Auto-selected provider: Anthropic (ANTHROPIC_API_KEY found, note: paid)")
         else:
             raise EnvironmentError(
                 "No LLM provider configured. Set one of:\n"
-                "  GROQ_API_KEY   — free at https://console.groq.com\n"
-                "  HF_TOKEN       — free at https://huggingface.co/settings/tokens\n"
-                "  GEMINI_API_KEY — free at https://aistudio.google.com\n"
-                "  Install Ollama — https://ollama.com (fully local, free)\n"
-                "  OPENAI_API_KEY — paid"
+                "  GROQ_API_KEY      — free at https://console.groq.com\n"
+                "  HF_TOKEN          — free at https://huggingface.co/settings/tokens\n"
+                "  GEMINI_API_KEY    — free at https://aistudio.google.com\n"
+                "  Install Ollama    — https://ollama.com (fully local, free)\n"
+                "  OPENAI_API_KEY    — paid\n"
+                "  ANTHROPIC_API_KEY — paid"
             )
 
     default_hf_model = os.environ.get("HF_MODEL", "SouravNath/repomind-deepseek-coder-7b-lora")
     clients = {
-        "groq":   lambda: GroqClient(model or "deepseek-r1-distill-llama-70b"),
-        "hf":     lambda: HFInferenceClient(model or default_hf_model),
-        "gemini": lambda: GeminiClient(model or "gemini-2.0-flash"),
-        "ollama": lambda: OllamaClient(model or "deepseek-coder-v2:16b"),
-        "openai": lambda: OpenAIClient(model or "gpt-4o"),
+        "groq":      lambda: GroqClient(model or "deepseek-r1-distill-llama-70b"),
+        "hf":        lambda: HFInferenceClient(model or default_hf_model),
+        "gemini":    lambda: GeminiClient(model or "gemini-2.0-flash"),
+        "ollama":    lambda: OllamaClient(model or "qwen2.5-coder:32b"),
+        "openai":    lambda: OpenAIClient(model or "gpt-4o"),
+        "anthropic": lambda: AnthropicClient(model or "claude-3-5-sonnet-20240620"),
     }
     if provider not in clients:
         raise ValueError(f"Unknown provider: {provider}. Choose from {list(clients)}")

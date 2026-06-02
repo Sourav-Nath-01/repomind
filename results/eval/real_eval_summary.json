@@ -1,0 +1,9 @@
+{
+  "n_total": 50,
+  "n_applied": 14,
+  "n_resolved": 0,
+  "pct_applied": 28.0,
+  "pct_resolved": 0.0,
+  "fuzz": 5,
+  "method": "existing_patches_fuzzy_apply"
+}

@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+*.pyc
+frontend/node_modules/
+frontend/.next/
+.git/
+.env
+.cache/
+mlruns/
+results/
+htmlcov/
+*.pt
+*.pth
+*.safetensors
+overview.pdf

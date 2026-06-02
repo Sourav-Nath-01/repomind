@@ -152,6 +152,20 @@ class SandboxExecutor:
             workspace_dir: local directory to clone into
         """
         github_url = f"https://github.com/{repo}.git"
+        # Clear any stale content before cloning (prevents 'already exists' errors)
+        import shutil as _shutil
+        import time as _time
+        if workspace_dir.exists():
+            _shutil.rmtree(workspace_dir, ignore_errors=True)
+            if workspace_dir.exists():
+                # If ignore_errors=True skipped root-owned files created by Docker, wipe via Docker
+                logger.warning("Local rmtree failed (likely root-owned files). Wiping via Docker...")
+                subprocess.run([
+                    "docker", "run", "--rm", "-v", f"{workspace_dir.parent}:/host_tmp",
+                    self.image, "rm", "-rf", f"/host_tmp/{workspace_dir.name}"
+                ], capture_output=True)
+                _shutil.rmtree(workspace_dir, ignore_errors=True) # Final cleanup just in case
+                
         workspace_dir.mkdir(parents=True, exist_ok=True)
 
         commit_label = base_commit[:8] if base_commit and base_commit != "HEAD" else "HEAD"
@@ -159,19 +173,31 @@ class SandboxExecutor:
 
         # Use treeless clone: fetches full commit graph (so old SHAs are reachable)
         # but only downloads file blobs for the checked-out tree — fast + space-efficient.
-        clone_result = self._run_local(
-            ["git", "clone", "--filter=blob:none", github_url, str(workspace_dir)],
-            timeout=300,
-        )
-        if not clone_result.success:
+        clone_result = None
+        for attempt in range(3):
+            clone_result = self._run_local(
+                ["git", "clone", "--filter=blob:none", github_url, str(workspace_dir)],
+                timeout=300,
+            )
+            if clone_result.success:
+                break
             # Fallback: full clone
-            logger.warning("Treeless clone failed, trying full clone...")
+            logger.warning(f"Treeless clone failed (attempt {attempt+1}), trying full clone...")
+            if workspace_dir.exists():
+                subprocess.run(["docker", "run", "--rm", "-v", f"{workspace_dir.parent}:/host_tmp", self.image, "rm", "-rf", f"/host_tmp/{workspace_dir.name}"], capture_output=True)
+                _shutil.rmtree(workspace_dir, ignore_errors=True)
             clone_result = self._run_local(
                 ["git", "clone", github_url, str(workspace_dir)],
                 timeout=600,
             )
-        if not clone_result.success:
-            logger.error("Clone failed: %s", clone_result.stderr[:500])
+            if clone_result.success:
+                break
+            
+            logger.warning(f"Clone failed (attempt {attempt+1}). Sleeping 5s before retry...")
+            _time.sleep(5)
+            
+        if not clone_result or not clone_result.success:
+            logger.error("Clone failed completely: %s", clone_result.stderr[:500] if clone_result else "")
             return clone_result
 
         # Checkout the exact SWE-bench base commit
@@ -205,13 +231,33 @@ class SandboxExecutor:
         patch_file = workspace_dir / "_agent_patch.diff"
         patch_file.write_text(patch_text)
 
-        result = self._run_local(
+        strategies = [
             ["git", "apply", "--whitespace=fix", str(patch_file)],
+            ["git", "apply", "--whitespace=fix", "--ignore-whitespace", str(patch_file)],
+            ["git", "apply", "--whitespace=fix", "-C1", str(patch_file)],
+            ["git", "apply", "--whitespace=fix", "-C0", str(patch_file)],
+        ]
+
+        result = None
+        for cmd in strategies:
+            result = self._run_local(cmd, cwd=workspace_dir)
+            if result.success:
+                logger.info("Patch applied with strategy: %s", " ".join(cmd[2:4]))
+                return result
+            # Roll back any partial application before next attempt
+            self._run_local(["git", "checkout", "--", "."], cwd=workspace_dir)
+
+        # Final fallback: GNU patch with fuzz=3 (handles line-wrapping differences)
+        gnu_result = self._run_local(
+            ["patch", "--fuzz=3", "-p1", "-i", str(patch_file)],
             cwd=workspace_dir,
         )
-        if not result.success:
-            # Try with --reject to get partial application details
-            logger.debug("git apply failed, stderr: %s", result.stderr[:300])
+        if gnu_result.success:
+            logger.info("Patch applied with GNU patch --fuzz=3")
+            return gnu_result
+        self._run_local(["git", "checkout", "--", "."], cwd=workspace_dir)
+
+        logger.debug("All patch strategies failed, stderr: %s", result.stderr[:300])
         return result
 
     def run_tests(
@@ -235,17 +281,122 @@ class SandboxExecutor:
             logger.warning("No test IDs provided — skipping test run")
             return TestResult()
 
-        pytest_args = ["python", "-m", "pytest", "-v", "--tb=short", "--no-header", "-rN"]
-        if extra_args:
-            pytest_args.extend(extra_args)
-        pytest_args.extend(test_ids)
+        import sys, re
 
-        if self.use_docker:
-            result = self._run_in_docker(pytest_args, workspace_dir)
+        # Detect test ID format.
+        # Django style: "test_foo (myapp.tests.MyTest)"
+        # Pytest style:  "myapp/tests/test_foo.py::MyTest::test_foo"
+        _django_pat = re.compile(r'^test_\w+\s+\(\w[\w.]+\)$')
+        is_django_style = any(_django_pat.match(t) for t in test_ids)
+
+        if is_django_style:
+            # Convert "test_foo (app.tests.MyTest)" → "app.tests.MyTest.test_foo"
+            converted = []
+            for t in test_ids:
+                m = re.match(r'^(test_\w+)\s+\(([\w.]+)\)$', t)
+                if m:
+                    converted.append(f"{m.group(2)}.{m.group(1)}")
+                else:
+                    if " " not in t or "::" in t:
+                        converted.append(t)
+
+
+            runtests = workspace_dir / "tests" / "runtests.py"
+
+            if self.use_docker and runtests.exists():
+                # ── Run inside Docker (single container: pip install + runtests) ──
+                # Using bash -c combines both steps in ONE container so the
+                # pip-installed packages persist for the runtests.py call.
+                import shlex
+                tests_str = " ".join(shlex.quote(c) for c in converted)
+                bash_cmd = (
+                    "pip3 install -e /workspace --quiet --no-build-isolation --break-system-packages 2>&1 | tail -5 && "
+                    f"cd /workspace/tests && "
+                    f"python3 runtests.py --verbosity 2 --parallel 1 {tests_str}"
+                )
+                docker_full = [
+                    "docker", "run", "--rm",
+                    "--network=bridge",  # needs network for pip to install repo deps
+                    f"--memory={self.memory_limit}",
+                    f"--cpus={self.cpu_limit}",
+                    "--tmpfs=/tmp:size=256m",
+                    f"--volume={workspace_dir}:/workspace:rw",
+                    "--env=PYTHONPATH=/workspace",
+                    self.image,
+                    "bash", "-c", bash_cmd,
+                ]
+                logger.info("Running django tests in Docker (single container) for %d tests", len(converted))
+                result = self._run_local(docker_full, timeout=360)
+            else:
+                # ── Local fallback ───────────────────────────────────────────
+                # pip install first
+                self._run_local(
+                    [sys.executable, "-m", "pip", "install", "-e", ".", "--quiet",
+                     "--no-build-isolation"],
+                    cwd=workspace_dir, timeout=300,
+                )
+                extra_env = {"PYTHONPATH": str(workspace_dir)}
+                if runtests.exists():
+                    cmd = [sys.executable, str(runtests), "--verbosity", "2",
+                           "--parallel", "1"] + converted
+                    run_cwd = str(workspace_dir / "tests")
+                else:
+                    extra_env["DJANGO_SETTINGS_MODULE"] = "settings"
+                    cmd = [sys.executable, "-m", "django", "test",
+                           "--verbosity", "2", "--parallel", "1"] + converted
+                    run_cwd = str(workspace_dir)
+                logger.info("Running django tests locally for %d tests", len(converted))
+                result = self._run_local(cmd, cwd=run_cwd, timeout=300, extra_env=extra_env)
+
+            logger.debug("Django runner stdout[:500]: %s", result.stdout[:500])
+            logger.debug("Django runner stderr[:500]: %s", result.stderr[:500])
+            logger.info("Django runner exit code: %d", result.returncode)
+            return self._parse_django_test_output(result)
+
         else:
-            result = self._run_local(pytest_args, cwd=workspace_dir)
+            # ── Pytest-style tests ───────────────────────────────────────────
+            if self.use_docker:
+                # pip install + pytest in ONE container (packages persist)
+                valid_ids = [t for t in test_ids if " " not in t or "::" in t]
+                import shlex
+                tests_str = " ".join(shlex.quote(t) for t in valid_ids)
+                extra_str = " ".join(extra_args or [])
+                bash_cmd = (
+                    "sed -i 's/license = {file = \"LICENSE.rst\"}/license = {text = \"BSD-3-Clause\"}/g' /workspace/pyproject.toml 2>/dev/null || true && "
+                    "pip install -e /workspace --quiet --no-build-isolation 2>&1 | tail -5 && "
+                    f"cd /workspace && "
+                    f"python -m pytest -v --tb=short --no-header -rN --timeout=60 "
+                    f"{extra_str} {tests_str}"
+                )
+                docker_full = [
+                    "docker", "run", "--rm",
+                    "--network=bridge",  # needs network for pip to install repo deps
+                    f"--memory={self.memory_limit}",
+                    f"--cpus={self.cpu_limit}",
+                    "--tmpfs=/tmp:size=256m",
+                    f"--volume={workspace_dir}:/workspace:rw",
+                    "--env=PYTHONPATH=/workspace",
+                    self.image,
+                    "bash", "-c", bash_cmd,
+                ]
+                logger.info("Running pytest in Docker (single container) for %d tests", len(test_ids))
+                result = self._run_local(docker_full, timeout=360)
+            else:
+                self._run_local(
+                    [sys.executable, "-m", "pip", "install", "-e", ".", "--quiet",
+                     "--no-build-isolation"],
+                    cwd=workspace_dir, timeout=300,
+                )
+                pytest_args = [sys.executable, "-m", "pytest", "-v", "--tb=short",
+                               "--no-header", "-rN", "--timeout=60"]
+                if extra_args:
+                    pytest_args.extend(extra_args)
+                valid_ids = [t for t in test_ids if " " not in t or "::" in t]
+                pytest_args.extend(valid_ids)
+                logger.info("Running pytest locally for %d tests", len(test_ids))
+                result = self._run_local(pytest_args, cwd=workspace_dir, timeout=300)
 
-        return self._parse_pytest_output(result)
+            return self._parse_pytest_output(result)
 
     def _run_in_docker(self, cmd: list[str], workspace_dir: Path) -> ExecResult:
         """Run a command inside the Docker sandbox container."""
@@ -270,12 +421,19 @@ class SandboxExecutor:
     def _run_local(
         self,
         cmd: list[str],
-        cwd: Path | None = None,
+        cwd: Path | str | None = None,
         timeout: int | None = None,
+        extra_env: dict[str, str] | None = None,
     ) -> ExecResult:
         """Execute a subprocess with timeout and capture output."""
         if timeout is None:
             timeout = self.timeout
+
+        import os as _os
+        env = None
+        if extra_env:
+            env = dict(_os.environ)
+            env.update(extra_env)
 
         start = time.monotonic()
         try:
@@ -285,6 +443,7 @@ class SandboxExecutor:
                 text=True,
                 timeout=timeout,
                 cwd=str(cwd) if cwd else None,
+                env=env,
             )
             elapsed = time.monotonic() - start
             return ExecResult(
@@ -345,6 +504,49 @@ class SandboxExecutor:
             len(test_result.passed),
             len(test_result.failed),
             len(test_result.errors),
+        )
+        return test_result
+
+    @staticmethod
+    def _parse_django_test_output(result: ExecResult) -> TestResult:
+        """
+        Parse Django test runner --verbosity 2 output.
+
+        Django format per test (sometimes spans 2 lines with a docstring):
+          test_foo (myapp.tests.MyTest.test_foo)
+          Optional docstring here ... ok
+        """
+        test_result = TestResult(
+            raw_output=result.stdout + result.stderr,
+            elapsed_seconds=result.elapsed_seconds,
+            timed_out=result.timed_out,
+        )
+
+        # Match the test ID line, an optional docstring line, and the result.
+        ok_pat  = re.compile(r'^(test_\w+\s+\([\w.]+\))[^\n]*(?:\n[^\n]*)?\.\.\.\s+ok',  re.MULTILINE)
+        fail_pat = re.compile(r'^(test_\w+\s+\([\w.]+\))[^\n]*(?:\n[^\n]*)?\.\.\.\s+FAIL', re.MULTILINE)
+        err_pat  = re.compile(r'^(test_\w+\s+\([\w.]+\))[^\n]*(?:\n[^\n]*)?\.\.\.\s+ERROR', re.MULTILINE)
+
+        combined = result.stdout + result.stderr
+
+        def _normalize(tests):
+            norm = []
+            for t in tests:
+                # Remove duplicated method name from class path: "test_foo (mod.cls.test_foo)" -> "test_foo (mod.cls)"
+                m = re.match(r'^(test_\w+)\s+\((.*?)\.\1\)$', t)
+                if m:
+                    norm.append(f"{m.group(1)} ({m.group(2)})")
+                else:
+                    norm.append(t)
+            return norm
+
+        test_result.passed = _normalize(ok_pat.findall(combined))
+        test_result.failed = _normalize(fail_pat.findall(combined))
+        test_result.errors = _normalize(err_pat.findall(combined))
+
+        logger.debug(
+            "Django test results — passed: %d, failed: %d, errors: %d",
+            len(test_result.passed), len(test_result.failed), len(test_result.errors),
         )
         return test_result
 

@@ -1,0 +1,50 @@
+{"instance_id": "astropy__astropy-12907", "patch_applied": false, "resolved": false, "error": "all failed: patch: **** unexpected end of file in patch\n", "method": ""}
+{"instance_id": "astropy__astropy-14995", "patch_applied": false, "resolved": false, "error": "all failed: patch: **** unexpected end of file in patch\n", "method": ""}
+{"instance_id": "django__django-11001", "patch_applied": false, "resolved": false, "error": "all failed: patch: **** unexpected end of file in patch\n", "method": ""}
+{"instance_id": "astropy__astropy-14182", "patch_applied": false, "resolved": false, "error": "all failed: patch: **** unexpected end of file in patch\n", "method": ""}
+{"instance_id": "astropy__astropy-14365", "patch_applied": false, "resolved": false, "error": "all failed: patch: **** unexpected end of file in patch\n", "method": ""}
+{"instance_id": "astropy__astropy-6938", "patch_applied": true, "resolved": false, "error": "", "method": "patch --fuzz=5", "elapsed": 2.2}
+{"instance_id": "astropy__astropy-7746", "patch_applied": true, "resolved": false, "error": "", "method": "patch --fuzz=5", "elapsed": 2.1}
+{"instance_id": "django__django-10914", "patch_applied": false, "resolved": false, "error": "all failed: patch: **** unexpected end of file in patch\n", "method": ""}
+{"instance_id": "django__django-10924", "patch_applied": false, "resolved": false, "error": "all failed: patch: **** unexpected end of file in patch\n", "method": ""}
+{"instance_id": "django__django-11019", "patch_applied": false, "resolved": false, "error": "all failed: ", "method": ""}
+{"instance_id": "django__django-11039", "patch_applied": false, "resolved": false, "error": "all failed: patch: **** malformed patch at line 13: @@ -28\n\n", "method": ""}
+{"instance_id": "django__django-11049", "patch_applied": false, "resolved": false, "error": "all failed: ", "method": ""}
+{"instance_id": "django__django-11099", "patch_applied": true, "resolved": false, "error": "", "method": "git apply strict", "elapsed": 2.2}
+{"instance_id": "django__django-11133", "patch_applied": false, "resolved": false, "error": "all failed: ", "method": ""}
+{"instance_id": "django__django-11179", "patch_applied": false, "resolved": false, "error": "all failed: patch: **** malformed patch at line 15: To address\n\n", "method": ""}
+{"instance_id": "django__django-11283", "patch_applied": false, "resolved": false, "error": "all failed: patch: **** malformed patch at line 23:  \n\n", "method": ""}
+{"instance_id": "django__django-11422", "patch_applied": true, "resolved": false, "error": "", "method": "patch --fuzz=5", "elapsed": 2.3}
+{"instance_id": "django__django-11564", "patch_applied": true, "resolved": false, "error": "", "method": "patch --fuzz=5", "elapsed": 2.5}
+{"instance_id": "django__django-11583", "patch_applied": false, "resolved": false, "error": "all failed: ", "method": ""}
+{"instance_id": "django__django-11620", "patch_applied": false, "resolved": false, "error": "all failed: patch: **** malformed patch at line 21:                      # didn't match, so ", "method": ""}
+{"instance_id": "django__django-11630", "patch_applied": true, "resolved": false, "error": "", "method": "git apply strict", "elapsed": 2.2}
+{"instance_id": "django__django-11742", "patch_applied": true, "resolved": false, "error": "", "method": "patch --fuzz=5", "elapsed": 2.3}
+{"instance_id": "django__django-11815", "patch_applied": false, "resolved": false, "error": "all failed: patch: **** unexpected end of file in patch\n", "method": ""}
+{"instance_id": "django__django-11848", "patch_applied": false, "resolved": false, "error": "all failed: patch: **** unexpected end of file in patch\n", "method": ""}
+{"instance_id": "django__django-11910", "patch_applied": true, "resolved": false, "error": "", "method": "patch --fuzz=5", "elapsed": 2.4}
+{"instance_id": "django__django-11964", "patch_applied": true, "resolved": false, "error": "", "method": "patch --fuzz=5", "elapsed": 2.7}
+{"instance_id": "django__django-11999", "patch_applied": false, "resolved": false, "error": "all failed: ", "method": ""}
+{"instance_id": "django__django-12113", "patch_applied": false, "resolved": false, "error": "all failed: patch: **** unexpected end of file in patch\n", "method": ""}
+{"instance_id": "django__django-12125", "patch_applied": false, "resolved": false, "error": "all failed: patch: **** unexpected end of file in patch\n", "method": ""}
+{"instance_id": "django__django-12184", "patch_applied": false, "resolved": false, "error": "all failed: patch: **** unexpected end of file in patch\n", "method": ""}
+{"instance_id": "django__django-12284", "patch_applied": false, "resolved": false, "error": "all failed: patch: **** unexpected end of file in patch\n", "method": ""}
+{"instance_id": "django__django-12286", "patch_applied": false, "resolved": false, "error": "all failed: ", "method": ""}
+{"instance_id": "django__django-12308", "patch_applied": false, "resolved": false, "error": "all failed: patch: **** unexpected end of file in patch\n", "method": ""}
+{"instance_id": "django__django-12453", "patch_applied": false, "resolved": false, "error": "all failed: patch: **** malformed patch at line 18: -        for obj in serializers.deserial", "method": ""}
+{"instance_id": "django__django-12470", "patch_applied": false, "resolved": false, "error": "all failed: ", "method": ""}
+{"instance_id": "django__django-12497", "patch_applied": false, "resolved": false, "error": "all failed: ", "method": ""}
+{"instance_id": "django__django-12589", "patch_applied": false, "resolved": false, "error": "all failed: patch: **** malformed patch at line 12: @@ -1949,3 +1949\n\n", "method": ""}
+{"instance_id": "django__django-12700", "patch_applied": false, "resolved": false, "error": "all failed: patch: **** unexpected end of file in patch\n", "method": ""}
+{"instance_id": "django__django-12708", "patch_applied": false, "resolved": false, "error": "all failed: ", "method": ""}
+{"instance_id": "django__django-12747", "patch_applied": true, "resolved": false, "error": "", "method": "patch --fuzz=5", "elapsed": 2.1}
+{"instance_id": "django__django-12856", "patch_applied": false, "resolved": false, "error": "all failed: patch: **** unexpected end of file in patch\n", "method": ""}
+{"instance_id": "django__django-12915", "patch_applied": false, "resolved": false, "error": "all failed: patch: **** unexpected end of file in patch\n", "method": ""}
+{"instance_id": "django__django-12983", "patch_applied": false, "resolved": false, "error": "all failed: patch: **** unexpected end of file in patch\n", "method": ""}
+{"instance_id": "django__django-13028", "patch_applied": false, "resolved": false, "error": "all failed: patch: **** unexpected end of file in patch\n", "method": ""}
+{"instance_id": "django__django-11905", "patch_applied": false, "resolved": false, "error": "all failed: patch: **** malformed patch at line 16:  \n\n", "method": ""}
+{"instance_id": "django__django-12908", "patch_applied": true, "resolved": false, "error": "", "method": "patch --fuzz=5", "elapsed": 2.5}
+{"instance_id": "django__django-13033", "patch_applied": true, "resolved": false, "error": "", "method": "patch --fuzz=5", "elapsed": 2.5}
+{"instance_id": "django__django-13158", "patch_applied": true, "resolved": false, "error": "", "method": "patch --fuzz=5", "elapsed": 2.5}
+{"instance_id": "django__django-13220", "patch_applied": true, "resolved": false, "error": "", "method": "patch --fuzz=5", "elapsed": 2.5}
+{"instance_id": "django__django-11797", "patch_applied": false, "resolved": false, "error": "all failed: patch: **** unexpected end of file in patch\n", "method": ""}

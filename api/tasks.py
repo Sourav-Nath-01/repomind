@@ -144,7 +144,7 @@ async def run_agent_task_async(
         from localisation.pipeline import LocalisationPipeline
         pipeline = LocalisationPipeline(
             use_embeddings=False,   # skip OpenAI embeddings for speed in demo
-            use_deberta=False,
+            use_colbert=False,
             use_ppr=True,
         )
         pipeline.index_repo(symbols, graph)

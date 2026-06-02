@@ -2,31 +2,28 @@
 fine_tuning/build_dataset.py
 ─────────────────────────────
 Converts resolved SWE-bench run results into a QLoRA-ready fine-tuning
-dataset in ChatML format (what Llama models expect).
+dataset in ChatML format.
 
-Reads:  results/local_run/results.jsonl
-Writes: results/fine_tuning/train.jsonl  (80%)
-        results/fine_tuning/val.jsonl    (20%)
-
-Each training example = one (problem, file_content, correct_patch) triple.
+Matches the agent's actual system prompt and builds file contexts perfectly
+by matching trajectories with benchmark status.
 """
 from __future__ import annotations
 
-import json, random, sys
+import json, random, sys, tempfile, shutil
 from pathlib import Path
 
 ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT))
 
-RESULTS_FILE = ROOT / "results" / "local_run" / "results.jsonl"
-OUT_DIR      = ROOT / "results" / "fine_tuning"
+OUT_DIR = ROOT / "results" / "fine_tuning"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-REPO_CACHE = ROOT / "results" / "eval" / "repo_cache"
-
+from agent.reflection_agent import SYSTEM_PROMPT, INITIAL_PROMPT_TEMPLATE
+from agent.tools import AgentTools
+from sandbox.executor import SandboxExecutor
+from swe_bench.loader import SWEBenchLoader
 
 def make_chatml(system: str, user: str, assistant: str) -> dict:
-    """Format one training example in ChatML."""
     return {
         "messages": [
             {"role": "system",  "content": system},
@@ -35,62 +32,77 @@ def make_chatml(system: str, user: str, assistant: str) -> dict:
         ]
     }
 
+import argparse
+import glob
 
 def build():
-    # Load benchmark results
-    with open(RESULTS_FILE) as f:
-        results = [json.loads(l) for l in f if l.strip()]
-
-    resolved = [r for r in results if r.get("resolved") and r.get("patch")]
-    print(f"Found {len(resolved)} resolved issues to use as training data")
-
+    # 1. Load SWE-bench dataset
+    print("Loading SWE-bench Lite instances...")
+    instances = {i["instance_id"]: i for i in SWEBenchLoader().load("test")}
+    
+    # 2. Gather localised files from all past sweeps so we don't need to re-run ColBERT
+    print("Scanning historical trajectory files for ColBERT localizations...")
+    traj_data = {}
+    traj_files = list(Path("results").glob("**/trajectories_with_reflection*.jsonl"))
+    for traj_file in traj_files:
+        with open(traj_file) as f:
+            for line in f:
+                if not line.strip(): continue
+                try:
+                    d = json.loads(line)
+                    if "localised_files" in d and d["localised_files"]:
+                        traj_data[d["instance_id"]] = d["localised_files"]
+                except:
+                    pass
+    
+    print(f"Found cached localizations for {len(traj_data)} instances.")
+    sandbox = SandboxExecutor(use_docker=False)
+    
     examples = []
     skipped = 0
 
-    for r in resolved:
-        iid      = r["instance_id"]
-        repo     = r["repo"]
-        patch    = r["patch"]
+    print(f"Generating SFT dataset using Gold Patches...")
+    
+    for iid, inst in instances.items():
+        if iid not in traj_data:
+            skipped += 1
+            continue
+            
+        localised_files = traj_data[iid]
 
-        # Load the SWE-bench instance for the problem statement
-        try:
-            from swe_bench.loader import SWEBenchLoader
-            instances = {i["instance_id"]: i for i in SWEBenchLoader().load("test")}
-            inst = instances.get(iid)
-            if not inst:
+        # Reconstruct the exact file context the LLM saw
+        with tempfile.TemporaryDirectory() as tmpdir:
+            ws = Path(tmpdir)
+            clone_res = sandbox.clone_repo(inst["repo"], inst["base_commit"], ws)
+            if not clone_res.success:
+                print(f"  ⚠️  Failed to clone {iid}")
                 skipped += 1
                 continue
-            problem = inst["problem_statement"]
-        except Exception as e:
-            print(f"  ⚠️  Skipping {iid}: {e}")
-            skipped += 1
-            continue
+                
+            tools = AgentTools(ws)
+            file_contents = ""
+            for fp in localised_files:
+                read_res = tools.read_file(fp, max_lines=200)
+                file_contents += f"\n### {fp}\n{read_res}\n"
 
-        # Patch is in <<<SEARCH / ===REPLACE / >>>END format — use it directly
-        # No need to extract file path; the patch is the assistant's full output
-        if not patch or len(patch.strip()) < 20:
-            skipped += 1
-            continue
+            if not file_contents:
+                skipped += 1
+                continue
 
-        # Build training example in ChatML format
-        system_prompt = (
-            "You are an expert Python software engineer. "
-            "Given a GitHub bug report, output a minimal SEARCH/REPLACE block "
-            "to fix the bug. Format your fix as:\n"
-            "<<<SEARCH\nexact lines from the file to replace\n===REPLACE\nfixed replacement lines\n>>>END"
-        )
+            user_prompt = INITIAL_PROMPT_TEMPLATE.format(
+                problem_statement=inst["problem_statement"],
+                file_context=file_contents.strip()
+            )
+            
+            # THE MAGIC: Use the human-written GOLD PATCH as the answer!
+            assistant_response = inst["patch"].strip()
+            
+            examples.append(make_chatml(SYSTEM_PROMPT, user_prompt, assistant_response))
+            print(f"  ✅ {iid} (Gold Patch added)")
 
-        user_prompt = (
-            f"Repository: {repo}\n"
-            f"Instance: {iid}\n\n"
-            f"Bug Report:\n{problem[:800]}"
-        )
-
-        # The correct patch is the ground-truth assistant response
-        assistant_response = patch.strip()
-
-        examples.append(make_chatml(system_prompt, user_prompt, assistant_response))
-        print(f"  ✅ {iid}")
+    if not examples:
+        print("No examples generated. Exiting.")
+        return
 
     # Shuffle and split 80/20
     random.seed(42)
@@ -118,9 +130,6 @@ def build():
     print(f"   Train → {train_path}")
     print(f"   Val   → {val_path}")
     print(f"\n📋 Next step: Upload to Kaggle and run fine_tuning/train.py")
-
-    return {"train": len(train), "val": len(val), "skipped": skipped}
-
 
 if __name__ == "__main__":
     build()

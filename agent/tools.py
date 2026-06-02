@@ -57,13 +57,16 @@ class AgentTools:
         self.workspace_dir = Path(workspace_dir)
         self.sandbox = sandbox  # SandboxExecutor instance (optional)
 
-    def read_file(self, path: str, max_lines: int = 200) -> ToolResult:
+    def read_file(self, path: str, max_lines: int = 300) -> ToolResult:
         """
         Read the contents of a file relative to workspace_dir.
 
         Args:
             path: relative file path within the workspace
             max_lines: truncate to this many lines (token budget control)
+
+        Returns file content with 1-indexed line numbers so the LLM can
+        generate accurate @@ hunk headers in unified diffs.
         """
         full_path = self.workspace_dir / path
         # Prevent path traversal
@@ -79,15 +82,21 @@ class AgentTools:
             content = full_path.read_text(errors="replace")
             lines = content.splitlines()
             truncated = len(lines) > max_lines
-            visible = "\n".join(lines[:max_lines])
+            visible_lines = lines[:max_lines]
+            # Add 1-indexed line numbers so the model generates correct hunk headers
+            numbered = "\n".join(
+                f"{i + 1:4d} | {line}"
+                for i, line in enumerate(visible_lines)
+            )
             if truncated:
-                visible += f"\n... [{len(lines) - max_lines} more lines truncated]"
+                numbered += f"\n... [{len(lines) - max_lines} more lines truncated]"
             return ToolResult(
-                "read_file", True, visible,
+                "read_file", True, numbered,
                 metadata={"total_lines": len(lines), "truncated": truncated}
             )
         except Exception as e:
             return ToolResult("read_file", False, "", str(e))
+
 
     def write_patch(self, diff_text: str) -> ToolResult:
         """

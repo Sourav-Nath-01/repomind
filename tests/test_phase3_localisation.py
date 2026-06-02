@@ -364,7 +364,7 @@ class TestLocalisationPipeline:
         from localisation.pipeline import LocalisationPipeline
         pipeline = LocalisationPipeline(
             use_embeddings=False,
-            use_deberta=False,
+            use_colbert=False,
             use_ppr=False,
         )
         symbols = [
@@ -379,7 +379,7 @@ class TestLocalisationPipeline:
 
     def test_pipeline_empty_query(self):
         from localisation.pipeline import LocalisationPipeline
-        pipeline = LocalisationPipeline(use_embeddings=False, use_deberta=False)
+        pipeline = LocalisationPipeline(use_embeddings=False, use_colbert=False)
         symbols = [make_file_symbols("a.py", "content")]
         pipeline.index_repo(symbols)
         result = pipeline.localise("")
@@ -388,7 +388,7 @@ class TestLocalisationPipeline:
 
     def test_pipeline_with_gold_files_computes_recall(self):
         from localisation.pipeline import LocalisationPipeline
-        pipeline = LocalisationPipeline(use_embeddings=False, use_deberta=False, use_ppr=False)
+        pipeline = LocalisationPipeline(use_embeddings=False, use_colbert=False, use_ppr=False)
         # Use a larger corpus so BM25 gives positive scores
         # 'queryset' appears in path AND content of target.py → guaranteed top-1
         symbols = [
@@ -409,7 +409,7 @@ class TestLocalisationPipeline:
 
     def test_top_k_paths_property(self):
         from localisation.pipeline import LocalisationPipeline
-        pipeline = LocalisationPipeline(use_embeddings=False, use_deberta=False, use_ppr=False)
+        pipeline = LocalisationPipeline(use_embeddings=False, use_colbert=False, use_ppr=False)
         symbols = [make_file_symbols(f"f{i}.py", f"content {i}") for i in range(5)]
         pipeline.index_repo(symbols)
         result = pipeline.localise("content 1", top_k=3)
@@ -417,7 +417,7 @@ class TestLocalisationPipeline:
 
     def test_hit_diagnostic_flags(self):
         from localisation.pipeline import LocalisationPipeline
-        pipeline = LocalisationPipeline(use_embeddings=False, use_deberta=False, use_ppr=False)
+        pipeline = LocalisationPipeline(use_embeddings=False, use_colbert=False, use_ppr=False)
         symbols = [make_file_symbols("a.py", "special word")]
         pipeline.index_repo(symbols)
         result = pipeline.localise("special word", top_k=1)
