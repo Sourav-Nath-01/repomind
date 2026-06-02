@@ -7,23 +7,32 @@ sdk: docker
 pinned: false
 ---
 
-# 🤖 RepoMind: Autonomous SWE-bench Agent Framework
-
 [![CI](https://github.com/Sourav-Nath-01/repomind/actions/workflows/ci.yml/badge.svg)](https://github.com/Sourav-Nath-01/repomind/actions/workflows/ci.yml)
 [![Tests](https://img.shields.io/badge/tests-244%20passed-brightgreen)](https://github.com/Sourav-Nath-01/repomind/actions)
 [![Python](https://img.shields.io/badge/python-3.12-blue)](https://www.python.org/)
 
-> **End-to-End ML Engineering Project** — LLM Agents · SWE-bench Lite · ColBERT Dense Retrieval · Docker Sandboxing · Full-Stack Cloud Deployment
+<h1 align="center">🧠 RepoMind</h1>
 
-**Live Demo:** [https://repomind-taupe.vercel.app/](https://repomind-taupe.vercel.app/)
+<p align="center">
+  <strong>Semantic Context Compression and File Localisation for Massive Codebases</strong>
+  <br>
+  <em>An open-source Retrieval-Augmented Generation (RAG) framework designed to compress massive Python repositories into strict token limits.</em>
+</p>
 
-An autonomous agent framework designed to tackle **SWE-bench Lite**, the gold-standard benchmark for AI software engineers. The system reads GitHub issues, semantic-searches massive codebases using ColBERT-v2, and generates unified diff patches via an autonomous LLM Reflection loop inside a secure Docker evaluator.
+## 🚀 The Challenge
 
----
+Localising a bug across thousands of files is the primary bottleneck for agentic software engineering. Real-world repositories like Django contain over 3,000 files, making it impossible to pass the entire codebase to an LLM.
 
-## 🎯 Benchmark Evaluation & Methodology
+**RepoMind** addresses this by combining AST-guided dependency analysis with **ColBERT-v2** semantic dense retrieval. Instead of relying on expensive proprietary search APIs or naive `grep`, RepoMind accurately isolates the 1-3 highly relevant buggy files directly from a GitHub issue description.
 
-We engineered an autonomous agent capable of resolving complex real-world GitHub issues by meticulously orchestrating RAG (Retrieval-Augmented Generation) and frontier LLMs on a **100% free-tier architecture**.
+## 📊 Key Results (Retrieval Accuracy)
+
+Evaluated on a subset of SWE-bench Lite (Django and Astropy), RepoMind demonstrates massive improvements in finding the correct buggy file (**Recall@5**):
+
+*   **BM25 (Baseline):** 58.0% Recall@5
+*   **BM25 + ColBERT-v2:** **78.0% Recall@5**
+
+*Note: While RepoMind includes a downstream LLM patch generator (using `gpt-4o-mini`) to validate the retrieved context, the primary contribution of this project is the highly-optimised, free-tier-compatible retrieval pipeline.*
 
 ### 1. Semantic Localisation (ColBERT-v2)
 To bypass strict token limits (like the 8,000-token payload limit of free-tier APIs), we implemented a highly tuned **ColBERT-v2** retrieval pipeline. By parsing the AST (Abstract Syntax Tree) of massive repositories (e.g., Django's 3,000+ files), the agent perfectly localizes the buggy logic and mathematically compresses the file context down to the exact 26,000 characters needed for the prompt.
